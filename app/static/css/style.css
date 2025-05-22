@@ -1,0 +1,200 @@
+/* Estilos personalizados para la plataforma de Comisiones Marinas */
+
+/* Estilos para la cabecera */
+.header-image {
+    position: relative;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+.header-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-overlay h1 {
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    font-size: 2.5rem;
+    text-align: center;
+    padding: 0 20px;
+}
+
+/* Estilos para las tarjetas de comisiones */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para comentarios */
+.comentario {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #dee2e6;
+}
+
+.comentario-nuevo {
+    border-left: 4px solid #0d6efd;
+    background-color: #f0f7ff;
+}
+
+.comentario-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.comentario-content {
+    white-space: pre-line;
+}
+
+/* Estilos para documentos */
+.documento-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+}
+
+.documento-item:hover {
+    background-color: #e9ecef;
+}
+
+.documento-icon {
+    font-size: 2rem;
+    margin-right: 15px;
+    color: #6c757d;
+}
+
+.documento-info {
+    flex-grow: 1;
+}
+
+/* Estilos para reuniones */
+.reunion-item {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #6c757d;
+}
+
+.reunion-fecha {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Estilos para el chat */
+#chat-messages {
+    min-height: 400px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.chat-message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 10px;
+}
+
+.own-message {
+    margin-left: auto;
+    background-color: #0d6efd;
+    color: white;
+}
+
+.other-message {
+    background-color: #f8f9fa;
+}
+
+.message-header {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.message-content {
+    word-wrap: break-word;
+}
+
+/* Estilos para el panel de administración */
+.admin-stat-card {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.admin-stat-card .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: #0d6efd;
+}
+
+.admin-stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.admin-stat-card .stat-label {
+    color: #6c757d;
+    font-size: 1rem;
+}
+
+/* Estilos para formularios */
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Estilos para badges personalizados */
+.badge {
+    padding: 0.35em 0.65em;
+}
+
+/* Estilos para el footer */
+footer {
+    margin-top: auto;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .header-overlay h1 {
+        font-size: 1.8rem;
+    }
+    
+    .documento-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .documento-icon {
+        margin-bottom: 10px;
+    }
+    
+    .admin-stat-card {
+        margin-bottom: 15px;
+    }
+}
