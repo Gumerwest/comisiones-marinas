@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: comisiones-app
+    runtime: python
+    buildCommand: |
+      pip install -r requirements.txt
+      mkdir -p app/static/uploads
+      flask db init || true
+      flask db migrate -m "Deploy migration" || true
+      flask db upgrade
+      flask create-default-admin || true
+    startCommand: gunicorn --worker-class eventlet -w 1 "app:create_app()" --bind 0.0.0.0:$PORT
+    envVars:
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: comisiones-db
+          property: connectionString
+      - key: ADMIN_EMAIL
+        value: admin@comisionesmarinas.es
+      - key: ADMIN_PASSWORD
+        generateValue: true
+    plan: free
+
+databases:
+  - name: comisiones-db
+    databaseName: comisiones_db
+    user: comisiones_user
+    plan: free
