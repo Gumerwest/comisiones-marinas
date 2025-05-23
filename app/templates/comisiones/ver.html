@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+
+{% block comision_id %}{{ comision.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ comision.nombre }}</li>
+            </ol>
+        </nav>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h2>{{ comision.nombre }}</h2>
+                        <p class="text-muted">Creada el {{ comision.fecha_creacion.strftime('%d/%m/%Y') }}</p>
+                        <p>{{ comision.descripcion }}</p>
+                        
+                        {% if not current_user.is_anonymous %}
+                            <div class="mt-4">
+                                {% if es_miembro %}
+                                    <span class="badge bg-success mb-2">Es miembro de esta comisión</span>
+                                    {% if es_coordinador %}
+                                        <span class="badge bg-primary mb-2">Coordinador</span>
+                                    {% endif %}
+                                    <div>
+                                        <a href="{{ url_for('temas.crear_tema', comision_id=comision.id) }}" class="btn btn-primary">
+                                            <i class="fas fa-plus-circle"></i> Proponer Tema
+                                        </a>
+                                    </div>
+                                {% elif solicitud_pendiente %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-clock me-2"></i> Su solicitud de membresía está pendiente de aprobación.
+                                    </div>
+                                {% else %}
+                                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-user-plus"></i> Solicitar Membresía
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {% if comision.imagen_path %}
+                            <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" alt="{{ comision.nombre }}" class="img-fluid rounded">
+                        {% else %}
+                            <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                                <i class="fas fa-ship fa-4x"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <h5>Miembros: {{ miembros|length }}</h5>
+                            <a href="{{ url_for('comisiones.listar_miembros', id=comision.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-users"></i> Ver Miembros
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if current_user.rol == 'admin' or es_coordinador %}
+                <div class="card-footer">
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ url_for('comisiones.editar_comision', id=comision.id) }}" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        {% if current_user.rol == 'admin' %}
+                            <form action="{{ url_for('comisiones.eliminar_comision', id=comision.id) }}" method="post" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" data-confirm="¿Está seguro de que desea eliminar esta comisión?">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>{% if es_miembro or current_user.rol == 'admin' %}
+        <!-- Tabs para contenido de la comisión -->
+        <ul class="nav nav-tabs mb-4" id="comisionTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="temas-tab" data-bs-toggle="tab" data-bs-target="#temas" type="button" role="tab">Temas</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab">Chat General</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="documentacion-tab" data-bs-toggle="tab" data-bs-target="#documentacion" type="button" role="tab">Documentación</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="comisionTabContent">
+            <!-- Tab de Temas -->
+            <div class="tab-pane fade show active" id="temas" role="tabpanel" aria-labelledby="temas-tab">
+                <h3 class="mb-3">Temas de la Comisión</h3>
+                {% if temas %}
+                    <div class="row">
+                        {% for tema in temas %}
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    {% if tema.patrocinador %}
+                                    <div class="card-header bg-light">
+                                        <div class="d-flex align-items-center">
+                                            {% if tema.logo_patrocinador_path %}
+                                            <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="{{ tema.patrocinador }}" style="height: 30px; margin-right: 10px;">
+                                            {% endif %}
+                                            <small class="text-muted">Patrocinado por {{ tema.patrocinador }}</small>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ tema.titulo }}</h5>
+                                        <p class="card-text">{{ tema.resumen|truncate(150) }}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-primary">{{ tema.votos.count() }} votos</span>
+                                                <span class="badge bg-info">{{ tema.comentarios.count() }} comentarios</span>
+                                                {% if tema.reuniones.filter_by(estado='aprobada').count() > 0 %}
+                                                <span class="badge bg-warning text-dark">{{ tema.reuniones.filter_by(estado='aprobada').count() }} reuniones</span>
+                                                {% endif %}
+                                            </div>
+                                            <a href="{{ url_for('temas.ver_tema', id=tema.id) }}" class="btn btn-sm btn-outline-primary">Ver más</a>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer text-muted">
+                                        <small>Propuesto por {{ tema.creador.nombre }} {{ tema.creador.apellidos }} el {{ tema.fecha_creacion.strftime('%d/%m/%Y') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No hay temas aprobados en esta comisión.
+                        <a href="{{ url_for('temas.crear_tema', comision_id=comision.id) }}" class="alert-link">Proponga el primero</a>.
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Tab de Chat -->
+            <div class="tab-pane fade" id="chat" role="tabpanel" aria-labelledby="chat-tab">
+                <h3 class="mb-3">Chat General de la Comisión</h3>
+                <div class="card">
+                    <div class="card-body" id="chat-messages" data-current-user-id="{{ current_user.id }}">
+                        <!-- Los mensajes se cargarán aquí dinámicamente -->
+                    </div>
+                    <div class="card-footer">
+                        <form id="chat-form">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="chat-input" placeholder="Escribe un mensaje..." required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-paper-plane"></i> Enviar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab de Documentación -->
+            <div class="tab-pane fade" id="documentacion" role="tabpanel" aria-labelledby="documentacion-tab">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Documentación de la Comisión</h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#subirDocumentoComisionModal">
+                        <i class="fas fa-upload"></i> Subir Documento
+                    </button>
+                </div>
+                
+                {% if comision.documentos.count() > 0 %}
+                <div class="list-group">
+                    {% for documento in comision.documentos.order_by('fecha_subida desc').all() %}
+                    <div class="documento-item">
+                        <div class="documento-icon">
+                            {% if documento.tipo in ['pdf'] %}
+                            <i class="fas fa-file-pdf"></i>
+                            {% elif documento.tipo in ['doc', 'docx'] %}
+                            <i class="fas fa-file-word"></i>
+                            {% elif documento.tipo in ['xls', 'xlsx'] %}
+                            <i class="fas fa-file-excel"></i>
+                            {% elif documento.tipo in ['ppt', 'pptx'] %}
+                            <i class="fas fa-file-powerpoint"></i>
+                            {% elif documento.tipo in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            <i class="fas fa-file-image"></i>
+                            {% else %}
+                            <i class="fas fa-file"></i>
+                            {% endif %}
+                        </div>
+                        <div class="documento-info">
+                            <h5 class="mb-1">{{ documento.nombre }}</h5>
+                            <p class="mb-1">{{ documento.descripcion }}</p>
+                            <small class="text-muted">
+                                Subido por {{ documento.usuario.nombre }} {{ documento.usuario.apellidos }} el {{ documento.fecha_subida.strftime('%d/%m/%Y') }}
+                            </small>
+                        </div>
+                        <a href="{{ url_for('static', filename='uploads/' + documento.path) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="fas fa-download"></i> Descargar
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No hay documentos disponibles para esta comisión.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Modal para subir documento de comisión -->
+        <div class="modal fade" id="subirDocumentoComisionModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Subir Documento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{{ url_for('comisiones.subir_documento', id=comision.id) }}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label">Nombre del Documento</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="descripcion" name="descripcion" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="documento" class="form-label">Archivo</label>
+                                <input type="file" class="form-control" id="documento" name="documento" required>
+                                <div class="form-text">Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, GIF</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Subir</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-lock me-2"></i> Debe ser miembro de la comisión para ver el contenido completo.
+                {% if not current_user.is_anonymous and not solicitud_pendiente %}
+                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="alert-link">Solicitar membresía</a>.
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
