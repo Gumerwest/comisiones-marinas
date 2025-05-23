@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Gestión de Usuarios</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Nombre</th>
+                        <th>Empresa</th>
+                        <th>Estado</th>
+                        <th>Rol</th>
+                        <th>Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>{{ usuario.email }}</td>
+                        <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
+                        <td>{{ usuario.razon_social }}</td>
+                        <td>
+                            {% if usuario.activo %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if usuario.rol == 'admin' %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% else %}
+                                <span class="badge bg-primary">Usuario</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                {% if not usuario.activo %}
+                                    <form action="{{ url_for('admin.aprobar_usuario', id=usuario.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-success btn-sm" title="Aprobar">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('admin.rechazar_usuario', id=usuario.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Rechazar">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    {% if usuario.rol != 'admin' %}
+                                        <form action="{{ url_for('admin.hacer_admin', id=usuario.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-warning btn-sm" title="Hacer Admin">
+                                                <i class="fas fa-crown"></i>
+                                            </button>
+                                        </form>
+                                    {% elif usuario.id != current_user.id %}
+                                        <form action="{{ url_for('admin.quitar_admin', id=usuario.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-secondary btn-sm" title="Quitar Admin">
+                                                <i class="fas fa-user"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <form action="{{ url_for('admin.resetear_password', id=usuario.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-info btn-sm" title="Resetear Contraseña">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
