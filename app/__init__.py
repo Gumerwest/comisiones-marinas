@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_mail import Mail
@@ -9,7 +8,6 @@ from config import Config
 import os
 
 db = SQLAlchemy()
-migrate = Migrate()
 login = LoginManager()
 csrf = CSRFProtect()
 mail = Mail()
@@ -25,11 +23,15 @@ def create_app(config_class=Config):
         os.makedirs(upload_folder, exist_ok=True)
     
     db.init_app(app)
-    migrate.init_app(app, db)
     login.init_app(app)
     csrf.init_app(app)
     mail.init_app(app)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
+    
+    # Inicializar SocketIO con configuración específica para producción
+    if os.environ.get('RENDER'):
+        socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
+    else:
+        socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
     
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
