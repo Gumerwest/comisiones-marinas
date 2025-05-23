@@ -67,7 +67,7 @@ venv.bak/
 *.db
 *.sqlite
 
-# Uploads
+# Uploads - No incluir archivos subidos
 app/static/uploads/*
 !app/static/uploads/.gitkeep
 
@@ -78,5 +78,5 @@ app/static/uploads/*
 .DS_Store
 Thumbs.db
 
-# Flask-Migrate
+# Flask-Migrate (eliminar si existe)
 migrations/
