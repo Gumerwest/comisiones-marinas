@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="p-5 mb-4 bg-light rounded-3">
+            <div class="container-fluid py-5">
+                <h1 class="display-5 fw-bold">Bienvenido a la Plataforma de Comisiones de Trabajo Marinas de España</h1>
+                <p class="col-md-8 fs-4">Un espacio colaborativo para profesionales del sector marítimo español.</p>
+                <hr class="my-4">
+                <p>Participe en comisiones de trabajo, proponga temas, comparta documentos y colabore con otros profesionales del sector.</p>
+                {% if current_user.is_anonymous %}
+                    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.registro') }}" role="button">Registrarse</a>
+                    <a class="btn btn-outline-primary btn-lg" href="{{ url_for('auth.login') }}" role="button">Iniciar Sesión</a>
+                {% else %}
+                    <a class="btn btn-primary btn-lg" href="{{ url_for('comisiones.listar_comisiones') }}" role="button">Ver Comisiones</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h3>Comisiones Activas</h3>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    {% if comisiones %}
+        {% for comision in comisiones %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    {% if comision.imagen_path %}
+                        <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" class="card-img-top" alt="{{ comision.nombre }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="fas fa-ship fa-4x"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ comision.nombre }}</h5>
+                        <p class="card-text">{{ comision.descripcion|truncate(100) }}</p>
+                    </div>
+                    <div class="card-footer bg-white">
+                        {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" class="btn btn-primary">Ver Comisión</a>
+                        {% else %}
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">Iniciar sesión para ver más</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i> No hay comisiones activas en este momento.
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if current_user.is_authenticated and temas_destacados %}
+    <div class="row mt-5 mb-4">
+        <div class="col-md-12">
+            <h3>Temas Destacados</h3>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for tema in temas_destacados %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ tema.titulo }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ tema.comision.nombre }}</h6>
+                        <p class="card-text">{{ tema.resumen|truncate(150) }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-primary">{{ tema.votos.count() }} votos</span>
+                                <span class="badge bg-info">{{ tema.comentarios.count() }} comentarios</span>
+                            </div>
+                            <a href="{{ url_for('temas.ver_tema', id=tema.id) }}" class="btn btn-sm btn-outline-primary">Ver Tema</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
