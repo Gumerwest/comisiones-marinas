@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}">{{ comision.nombre }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Solicitar Membresía</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Solicitar Membresía</h4>
+            </div>
+            <div class="card-body">
+                <p>Está solicitando unirse a la comisión: <strong>{{ comision.nombre }}</strong></p>
+                <p>{{ comision.descripcion }}</p>
+                
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.motivo.label(class="form-label") }}
+                        {{ form.motivo(class="form-control" + (" is-invalid" if form.motivo.errors else ""), rows="4", placeholder="Opcional: Explique por qué desea unirse a esta comisión") }}
+                        {% for error in form.motivo.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Su solicitud será revisada por un administrador o coordinador de la comisión. Recibirá una notificación por email cuando sea procesada.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
