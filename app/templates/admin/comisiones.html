@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Gestión de Comisiones</h2>
+            <a href="{{ url_for('comisiones.crear_comision') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva Comisión
+            </a>
+        </div>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Miembros</th>
+                        <th>Temas</th>
+                        <th>Creada</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comision in comisiones %}
+                    <tr>
+                        <td>{{ comision.nombre }}</td>
+                        <td>{{ comision.descripcion|truncate(50) }}</td>
+                        <td>
+                            <span class="badge bg-primary">
+                                {{ comision.membresias.filter_by(estado='aprobado').count() }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">
+                                {{ comision.temas.count() }}
+                            </span>
+                        </td>
+                        <td>{{ comision.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if comision.activa %}
+                                <span class="badge bg-success">Activa</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactiva</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" class="btn btn-info btn-sm" title="Ver">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('comisiones.editar_comision', id=comision.id) }}" class="btn btn-warning btn-sm" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if comision.activa %}
+                                    <form action="{{ url_for('comisiones.eliminar_comision', id=comision.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Desactivar" data-confirm="¿Está seguro de que desea desactivar esta comisión?">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
