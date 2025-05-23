@@ -29,7 +29,7 @@ def create_app(config_class=Config):
     login.init_app(app)
     csrf.init_app(app)
     mail.init_app(app)
-    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
     
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
