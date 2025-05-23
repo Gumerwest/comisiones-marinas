@@ -1,8 +1,13 @@
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, jsonify
 from flask_login import current_user
 from app.models import Comision, Tema
 
 bp = Blueprint('main', __name__)
+
+@bp.route('/health')
+def health():
+    """Health check endpoint para Render"""
+    return jsonify({"status": "ok", "message": "Application is running"})
 
 @bp.route('/')
 def index():
