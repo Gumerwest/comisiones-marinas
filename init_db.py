@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script para inicializar la base de datos
+Script para inicializar la base de datos y crear directorios necesarios
 """
 import os
 import sys
@@ -18,6 +18,17 @@ def init_database():
     app = create_app()
     
     with app.app_context():
+        # Crear directorio de uploads si no existe
+        upload_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
+        if not os.path.exists(upload_path):
+            os.makedirs(upload_path, exist_ok=True)
+            print(f"📁 Directorio de uploads creado: {upload_path}")
+            
+            # Crear archivo .gitkeep para mantener el directorio
+            gitkeep_path = os.path.join(upload_path, '.gitkeep')
+            with open(gitkeep_path, 'w') as f:
+                f.write('# Keep this directory\n')
+        
         # Crear todas las tablas
         print("📊 Creando tablas...")
         db.create_all()
@@ -25,7 +36,7 @@ def init_database():
         
         # Buscar o crear administrador
         admin_email = os.environ.get('ADMIN_EMAIL', 'admin@comisionesmarinas.es')
-        admin_password = os.environ.get('ADMIN_PASSWORD', 'ComisionesMar2024!')
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
         
         # Buscar si existe el admin
         admin = Usuario.query.filter_by(email=admin_email).first()
@@ -80,4 +91,4 @@ if __name__ == '__main__':
         import traceback
         traceback.print_exc()
         # Continuar de todos modos para no bloquear el deploy
-        pass
+        sys.exit(0)  # Salir con código 0 para no bloquear el deploy
