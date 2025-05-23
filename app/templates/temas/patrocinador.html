@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=tema.comision_id) }}">{{ tema.comision.nombre }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('temas.ver_tema', id=tema.id) }}">{{ tema.titulo }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Gestionar Patrocinador</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Gestionar Patrocinador</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.patrocinador.label(class="form-label") }}
+                        {{ form.patrocinador(class="form-control" + (" is-invalid" if form.patrocinador.errors else "")) }}
+                        {% for error in form.patrocinador.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.logo.label(class="form-label") }}
+                        {{ form.logo(class="form-control" + (" is-invalid" if form.logo.errors else ""), accept="image/*") }}
+                        {% for error in form.logo.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        {% if tema.logo_patrocinador_path %}
+                        <div class="mt-2">
+                            <p>Logo actual:</p>
+                            <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="Logo actual" style="max-height: 100px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.enlace.label(class="form-label") }}
+                        {{ form.enlace(class="form-control" + (" is-invalid" if form.enlace.errors else "")) }}
+                        {% for error in form.enlace.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.solucion_patrocinador.label(class="form-label") }}
+                        {{ form.solucion_patrocinador(class="form-control" + (" is-invalid" if form.solucion_patrocinador.errors else ""), rows="6") }}
+                        {% for error in form.solucion_patrocinador.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Describa detalladamente la solución que propone el patrocinador para este tema.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('temas.ver_tema', id=tema.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
