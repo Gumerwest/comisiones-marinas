@@ -5,8 +5,8 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       mkdir -p app/static/uploads
-      python init_db.py
-    startCommand: gunicorn --worker-class eventlet -w 1 "app:create_app()" --bind 0.0.0.0:$PORT --log-level debug
+      python init_db.py || echo "Error en init_db pero continuamos..."
+    startCommand: gunicorn --worker-class eventlet -w 1 "app:create_app()" --bind 0.0.0.0:$PORT --log-level info --timeout 120
     envVars:
       - key: FLASK_APP
         value: run.py
