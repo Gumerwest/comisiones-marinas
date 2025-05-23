@@ -6,4 +6,4 @@ from app.models import Usuario
 # Importar todos los formularios para facilitar su uso
 from app.forms.auth import LoginForm, RegistroForm
 from app.forms.comisiones import ComisionForm, SolicitudMembresiaForm
-from app.forms.temas import TemaForm, PatrocinadorForm, ComentarioForm, DocumentoForm, ReunionForm
+from app.forms.temas import TemaForm, PatrocinadorForm, ComentarioForm, DocumentoForm, DocumentoComisionForm, ReunionForm
