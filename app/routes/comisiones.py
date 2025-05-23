@@ -170,7 +170,9 @@ def editar_comision(id):
     return render_template('comisiones/editar.html', 
                           title='Editar Comisión',
                           comision=comision,
-                          form=form)@bp.route('/<int:id>/miembros')
+                          form=form)
+
+@bp.route('/<int:id>/miembros')
 @login_required
 def listar_miembros(id):
     comision = Comision.query.get_or_404(id)
