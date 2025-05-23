@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=tema.comision_id) }}">{{ tema.comision.nombre }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('temas.ver_tema', id=tema.id) }}">{{ tema.titulo }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Proponer Reunión</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Proponer Nueva Reunión</h4>
+            </div>
+            <div class="card-body">
+                <p>Tema: <strong>{{ tema.titulo }}</strong></p>
+                
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.titulo.label(class="form-label") }}
+                        {{ form.titulo(class="form-control" + (" is-invalid" if form.titulo.errors else "")) }}
+                        {% for error in form.titulo.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descripcion.label(class="form-label") }}
+                        {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else ""), rows="3") }}
+                        {% for error in form.descripcion.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.fecha.label(class="form-label") }}
+                        {{ form.fecha(class="form-control" + (" is-invalid" if form.fecha.errors else ""), placeholder="YYYY-MM-DD HH:MM") }}
+                        {% for error in form.fecha.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Formato: AAAA-MM-DD HH:MM (ej: 2024-12-25 14:30)</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.duracion.label(class="form-label") }}
+                            {{ form.duracion(class="form-control" + (" is-invalid" if form.duracion.errors else ""), placeholder="60") }}
+                            {% for error in form.duracion.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.lugar.label(class="form-label") }}
+                            {{ form.lugar(class="form-control" + (" is-invalid" if form.lugar.errors else "")) }}
+                            {% for error in form.lugar.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.enlace_virtual.label(class="form-label") }}
+                        {{ form.enlace_virtual(class="form-control" + (" is-invalid" if form.enlace_virtual.errors else ""), placeholder="https://zoom.us/j/...") }}
+                        {% for error in form.enlace_virtual.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Opcional: Enlace para reunión virtual (Zoom, Teams, etc.)</div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Su propuesta de reunión quedará pendiente de aprobación por un coordinador o administrador.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('temas.ver_tema', id=tema.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
