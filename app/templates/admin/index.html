@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Panel de Administración</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="admin-stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-value">{{ usuarios_count }}</div>
+            <div class="stat-label">Usuarios Registrados</div>
+            {% if usuarios_pendientes > 0 %}
+                <div class="mt-2">
+                    <span class="badge bg-warning text-dark">{{ usuarios_pendientes }} pendientes</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="admin-stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-ship"></i>
+            </div>
+            <div class="stat-value">{{ comisiones_count }}</div>
+            <div class="stat-label">Comisiones Activas</div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="admin-stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="stat-value">{{ temas_count }}</div>
+            <div class="stat-label">Temas Propuestos</div>
+            {% if temas_pendientes > 0 %}
+                <div class="mt-2">
+                    <span class="badge bg-warning text-dark">{{ temas_pendientes }} pendientes</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="list-group">
+            <a href="{{ url_for('admin.listar_usuarios') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-users me-3"></i> Gestionar Usuarios
+                </div>
+                {% if usuarios_pendientes > 0 %}
+                    <span class="badge bg-warning text-dark">{{ usuarios_pendientes }} pendientes</span>
+                {% endif %}
+            </a>
+            
+            <a href="{{ url_for('admin.listar_comisiones') }}" class="list-group-item list-group-item-action">
+                <i class="fas fa-ship me-3"></i> Gestionar Comisiones
+            </a>
+            
+            <a href="{{ url_for('admin.listar_temas') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-lightbulb me-3"></i> Gestionar Temas
+                </div>
+                {% if temas_pendientes > 0 %}
+                    <span class="badge bg-warning text-dark">{{ temas_pendientes }} pendientes</span>
+                {% endif %}
+            </a>
+            
+            <a href="{{ url_for('admin.listar_membresias') }}" class="list-group-item list-group-item-action">
+                <i class="fas fa-id-card me-3"></i> Gestionar Membresías
+            </a>
+            
+            <a href="{{ url_for('comisiones.crear_comision') }}" class="list-group-item list-group-item-action">
+                <i class="fas fa-plus-circle me-3"></i> Crear Nueva Comisión
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
