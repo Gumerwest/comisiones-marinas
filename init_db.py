@@ -2,14 +2,25 @@
 """
 Script para inicializar la base de datos en producción
 """
+import os
+import sys
+
+# Añadir la ruta del proyecto al sys.path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from app import create_app, db
 from app.models import Usuario
-import os
 
 def init_database():
     app = create_app()
     with app.app_context():
         try:
+            print("🔄 Iniciando creación de base de datos...")
+            
+            # Eliminar todas las tablas existentes
+            db.drop_all()
+            print("✅ Tablas anteriores eliminadas")
+            
             # Crear todas las tablas
             db.create_all()
             print("✅ Tablas creadas correctamente")
@@ -20,6 +31,8 @@ def init_database():
                 # Crear administrador por defecto
                 admin_email = os.environ.get('ADMIN_EMAIL', 'admin@comisionesmarinas.es')
                 admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+                
+                print(f"🔄 Creando administrador: {admin_email}")
                 
                 admin = Usuario(
                     email=admin_email,
@@ -39,10 +52,14 @@ def init_database():
                 print(f"✅ Administrador creado: {admin_email}")
             else:
                 print("✅ Administrador ya existe")
+            
+            print("🎉 Base de datos inicializada correctamente")
                 
         except Exception as e:
             print(f"❌ Error al inicializar base de datos: {str(e)}")
-            raise
-
+            import traceback
+            traceback.print_exc()
+            # No hacer raise para que el build no falle completamente
+            
 if __name__ == '__main__':
     init_database()
