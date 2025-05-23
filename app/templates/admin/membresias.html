@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Gestión de Membresías</h2>
+        <hr>
+    </div>
+</div>
+
+{% if membresias_pendientes %}
+<div class="row">
+    <div class="col-md-12">
+        <h3>Solicitudes Pendientes de Aprobación</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Empresa</th>
+                        <th>Comisión</th>
+                        <th>Fecha Solicitud</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for membresia, usuario, comision in membresias_pendientes %}
+                    <tr>
+                        <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
+                        <td>{{ usuario.email }}</td>
+                        <td>{{ usuario.razon_social }}</td>
+                        <td>{{ comision.nombre }}</td>
+                        <td>{{ membresia.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <form action="{{ url_for('comisiones.aprobar_miembro', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-success btn-sm" title="Aprobar">
+                                        <i class="fas fa-check"></i> Aprobar
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('comisiones.rechazar_miembro', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Rechazar">
+                                        <i class="fas fa-times"></i> Rechazar
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No hay solicitudes de membresía pendientes en este momento.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
