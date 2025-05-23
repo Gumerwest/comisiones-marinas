@@ -5,12 +5,15 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       mkdir -p app/static/uploads
-    startCommand: gunicorn --worker-class eventlet -w 1 "app:create_app()" --bind 0.0.0.0:$PORT
+      python init_db.py
+    startCommand: gunicorn --worker-class eventlet -w 1 "app:create_app()" --bind 0.0.0.0:$PORT --log-level debug
     envVars:
       - key: FLASK_APP
         value: run.py
       - key: FLASK_ENV
-        value: production
+        value: production  
+      - key: RENDER
+        value: true
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
