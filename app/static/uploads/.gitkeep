@@ -1,0 +1,3 @@
+# Este archivo mantiene el directorio uploads en Git
+# Los archivos subidos por usuarios no se incluyen en el repositorio
+# Este directorio es necesario para que la aplicación funcione correctamente
