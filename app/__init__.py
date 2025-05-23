@@ -22,14 +22,22 @@ def create_app(config_class=Config):
     if not os.path.exists(upload_folder):
         os.makedirs(upload_folder, exist_ok=True)
     
+    # Configuración especial para SQLAlchemy en producción
+    if os.environ.get('RENDER'):
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_size': 10,
+            'pool_recycle': 3600,
+            'pool_pre_ping': True,
+            'max_overflow': 20,
+        }
+    
     db.init_app(app)
     login.init_app(app)
     csrf.init_app(app)
     mail.init_app(app)
     
-    # Inicializar SocketIO con configuración específica para producción
-    # IMPORTANTE: NO usar eventlet en producción
-    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
+    # Inicializar SocketIO sin async_mode específico
+    socketio.init_app(app, cors_allowed_origins="*")
     
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
@@ -61,6 +69,11 @@ def create_app(config_class=Config):
     # Configurar comandos CLI
     from app.utils.cli import init_cli_commands
     init_cli_commands(app)
+    
+    # Configuración adicional para evitar problemas de threading
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db.session.remove()
     
     return app
 
