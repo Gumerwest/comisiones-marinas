@@ -10,6 +10,14 @@ class Config:
         'sqlite:///' + os.path.join(basedir, 'app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
+    # CONFIGURACIÓN CRÍTICA PARA SQLALCHEMY
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,
+        'pool_recycle': 3600,
+        'pool_pre_ping': True,
+        'max_overflow': 20,
+    }
+    
     # Configuración de carga de archivos
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
@@ -24,5 +32,9 @@ class Config:
     
     # Configuraciones específicas para Render
     if 'RENDER' in os.environ:
-        SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').replace('postgres://', 'postgresql://')
+        # Arreglar URL de PostgreSQL
+        database_url = os.environ.get('DATABASE_URL')
+        if database_url and database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = database_url
         PREFERRED_URL_SCHEME = 'https'
