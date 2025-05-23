@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}">{{ comision.nombre }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Miembros</li>
+            </ol>
+        </nav>
+        
+        <h2>Miembros de {{ comision.nombre }}</h2>
+        <hr>
+    </div>
+</div>
+
+{% if solicitudes and (current_user.rol == 'admin' or es_coordinador) %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h3>Solicitudes Pendientes</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Empresa</th>
+                        <th>Cargo</th>
+                        <th>Fecha Solicitud</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario, membresia in solicitudes %}
+                    <tr>
+                        <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
+                        <td>{{ usuario.email }}</td>
+                        <td>{{ usuario.razon_social }}</td>
+                        <td>{{ usuario.cargo }}</td>
+                        <td>{{ membresia.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <form action="{{ url_for('comisiones.aprobar_miembro', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-success btn-sm" title="Aprobar">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('comisiones.rechazar_miembro', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Rechazar">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-12">
+        <h3>Miembros Aprobados</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Empresa</th>
+                        <th>Cargo</th>
+                        <th>Rol</th>
+                        <th>Miembro desde</th>
+                        {% if current_user.rol == 'admin' or es_coordinador %}
+                        <th>Acciones</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario, membresia in miembros %}
+                    <tr>
+                        <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
+                        <td>{{ usuario.email }}</td>
+                        <td>{{ usuario.razon_social }}</td>
+                        <td>{{ usuario.cargo }}</td>
+                        <td>
+                            {% if membresia.rol == 'coordinador' %}
+                                <span class="badge bg-primary">Coordinador</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Miembro</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ membresia.fecha_solicitud.strftime('%d/%m/%Y') }}</td>
+                        {% if current_user.rol == 'admin' or es_coordinador %}
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                {% if membresia.rol != 'coordinador' and (current_user.rol == 'admin' or es_coordinador) %}
+                                    <form action="{{ url_for('comisiones.nombrar_coordinador', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-warning btn-sm" title="Nombrar Coordinador">
+                                            <i class="fas fa-crown"></i>
+                                        </button>
+                                    </form>
+                                {% elif membresia.rol == 'coordinador' and current_user.rol == 'admin' %}
+                                    <form action="{{ url_for('comisiones.quitar_coordinador', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-secondary btn-sm" title="Quitar Coordinador">
+                                            <i class="fas fa-user"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
