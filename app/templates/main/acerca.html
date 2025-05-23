@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h2>Acerca de la Plataforma</h2>
+        <hr>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4><i class="fas fa-ship me-2"></i>¿Qué es la Plataforma de Comisiones Marinas?</h4>
+                <p>
+                    La Plataforma de Comisiones de Trabajo Marinas de España es un espacio colaborativo 
+                    diseñado para profesionales del sector marítimo español. Facilita la creación y 
+                    gestión de comisiones de trabajo especializadas donde los miembros pueden proponer 
+                    temas, compartir documentos, participar en discusiones y coordinar reuniones.
+                </p>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4><i class="fas fa-cogs me-2"></i>Funcionalidades Principales</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Gestión de Comisiones:</strong> Creación y administración de comisiones especializadas</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Propuesta de Temas:</strong> Los miembros pueden proponer temas de interés para debate</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Sistema de Votación:</strong> Votación de temas según su relevancia e interés</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Chat en Tiempo Real:</strong> Comunicación instantánea entre miembros</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Gestión Documental:</strong> Subida y compartición de documentos relevantes</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Programación de Reuniones:</strong> Coordinación de encuentros presenciales y virtuales</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Patrocinios:</strong> Posibilidad de contar con patrocinadores para temas específicos</li>
+                            <li><i class="fas fa-check text-success me-2"></i><strong>Notificaciones:</strong> Alertas por email de nuevas actividades</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4><i class="fas fa-user-plus me-2"></i>¿Cómo Participar?</h4>
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: bold;">1</div>
+                        <h5 class="mt-3">Registro</h5>
+                        <p>Complete el formulario de registro con sus datos profesionales</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="step-number bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: bold;">2</div>
+                        <h5 class="mt-3">Aprobación</h5>
+                        <p>Su solicitud será revisada y aprobada por un administrador</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="step-number bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: bold;">3</div>
+                        <h5 class="mt-3">Unirse</h5>
+                        <p>Solicite membresía a las comisiones de su interés</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="step-number bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem; font-weight: bold;">4</div>
+                        <h5 class="mt-3">Participar</h5>
+                        <p>Proponga temas, vote, comente y participe en reuniones</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body text-center">
+                <h4><i class="fas fa-anchor me-2"></i>Sector Marítimo Español</h4>
+                <p class="lead">
+                    Conectando profesionales del sector marítimo para impulsar el desarrollo 
+                    y la innovación en la industria naval española.
+                </p>
+                {% if current_user.is_anonymous %}
+                <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-user-plus"></i> Únase a Nosotros
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
