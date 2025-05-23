@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Mi Perfil</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Nombre:</strong> {{ current_user.nombre }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Apellidos:</strong> {{ current_user.apellidos }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Email:</strong> {{ current_user.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Teléfono:</strong> {{ current_user.telefono }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Razón Social:</strong> {{ current_user.razon_social }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Nombre Comercial:</strong> {{ current_user.nombre_comercial }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Cargo:</strong> {{ current_user.cargo }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Rol:</strong> 
+                        <span class="badge bg-{{ 'danger' if current_user.rol == 'admin' else 'primary' }}">
+                            {{ 'Administrador' if current_user.rol == 'admin' else 'Usuario' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Estado:</strong> 
+                        <span class="badge bg-{{ 'success' if current_user.activo else 'warning' }}">
+                            {{ 'Activo' if current_user.activo else 'Pendiente de Aprobación' }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Miembro desde:</strong> {{ current_user.fecha_registro.strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
