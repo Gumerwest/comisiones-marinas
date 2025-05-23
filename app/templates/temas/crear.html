@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}">{{ comision.nombre }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Proponer Tema</li>
+            </ol>
+        </nav>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Proponer Nuevo Tema</h4>
+            </div>
+            <div class="card-body">
+                <p>Comisión: <strong>{{ comision.nombre }}</strong></p>
+                
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.titulo.label(class="form-label") }}
+                        {{ form.titulo(class="form-control" + (" is-invalid" if form.titulo.errors else "")) }}
+                        {% for error in form.titulo.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.resumen.label(class="form-label") }}
+                        {{ form.resumen(class="form-control" + (" is-invalid" if form.resumen.errors else ""), rows="4") }}
+                        {% for error in form.resumen.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Proporcione un resumen claro y conciso del tema propuesto.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.situacion_actual.label(class="form-label") }}
+                        {{ form.situacion_actual(class="form-control" + (" is-invalid" if form.situacion_actual.errors else ""), rows="3") }}
+                        {% for error in form.situacion_actual.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Opcional: Describa la situación actual relacionada con este tema.</div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Su propuesta quedará pendiente de aprobación por un coordinador o administrador.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
