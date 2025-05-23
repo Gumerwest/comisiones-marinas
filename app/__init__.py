@@ -18,7 +18,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     # Crear directorio de uploads si no existe
-    upload_folder = app.config['UPLOAD_FOLDER']
+    upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
     if not os.path.exists(upload_folder):
         os.makedirs(upload_folder, exist_ok=True)
     
@@ -28,10 +28,8 @@ def create_app(config_class=Config):
     mail.init_app(app)
     
     # Inicializar SocketIO con configuración específica para producción
-    if os.environ.get('RENDER'):
-        socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
-    else:
-        socketio.init_app(app, cors_allowed_origins="*", async_mode='eventlet')
+    # IMPORTANTE: NO usar eventlet en producción
+    socketio.init_app(app, cors_allowed_origins="*", async_mode='threading')
     
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
