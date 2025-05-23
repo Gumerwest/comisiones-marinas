@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <h2>Contacto</h2>
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información de Contacto</h4>
+                    </div>
+                    <div class="card-body">
+                        <address>
+                            <strong>Comisiones de Trabajo Marinas de España</strong><br><br>
+                            <i class="fas fa-envelope me-2 text-primary"></i> <strong>Email:</strong><br>
+                            info@comisionesmarinas.es<br><br>
+                            
+                            <i class="fas fa-phone me-2 text-primary"></i> <strong>Teléfono:</strong><br>
+                            +34 900 123 456<br><br>
+                            
+                            <i class="fas fa-map-marker-alt me-2 text-primary"></i> <strong>Dirección:</strong><br>
+                            Madrid, España
+                        </address>
+                        
+                        <h5><i class="fas fa-clock me-2"></i>Horario de Atención</h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Lunes a Viernes:</strong></td>
+                                <td>9:00 - 18:00</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Sábados:</strong></td>
+                                <td>9:00 - 14:00</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Domingos:</strong></td>
+                                <td>Cerrado</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0"><i class="fas fa-headset me-2"></i>Soporte Técnico</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            Si experimenta problemas técnicos con la plataforma, 
+                            por favor póngase en contacto con nuestro equipo de soporte.
+                        </p>
+                        
+                        <div class="alert alert-info">
+                            <strong><i class="fas fa-envelope me-2"></i>Email de Soporte:</strong><br>
+                            soporte@comisionesmarinas.es
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <strong><i class="fas fa-phone me-2"></i>Teléfono de Soporte:</strong><br>
+                            +34 900 456 789
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6><i class="fas fa-tools me-2"></i>Problemas Comunes:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check-circle text-success me-2"></i>Problemas de inicio de sesión</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>Subida de documentos</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>Acceso a comisiones</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>Notificaciones por email</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0"><i class="fas fa-question-circle me-2"></i>Preguntas Frecuentes</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion" id="faqAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="faq1">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                                        <i class="fas fa-user-plus me-2"></i>¿Cómo puedo registrarme en la plataforma?
+                                    </button>
+                                </h2>
+                                <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Para registrarse, haga clic en "Registro" en la navegación superior y complete 
+                                        todos los campos requeridos con sus datos profesionales. Su solicitud será 
+                                        revisada por un administrador en un plazo de 24-48 horas.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="faq2">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                                        <i class="fas fa-clock me-2"></i>¿Cuánto tiempo tarda la aprobación de mi cuenta?
+                                    </button>
+                                </h2>
+                                <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        La aprobación suele tomar entre 24-48 horas laborables. 
+                                        Recibirá una notificación por email cuando su cuenta sea activada. 
+                                        Una vez activada, podrá solicitar membresía a las comisiones de su interés.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="faq3">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                                        <i class="fas fa-ship me-2"></i>¿Puedo crear mi propia comisión?
+                                    </button>
+                                </h2>
+                                <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Solo los administradores pueden crear nuevas comisiones. 
+                                        Si desea proponer una nueva comisión, póngase en contacto con nosotros 
+                                        a través del email info@comisionesmarinas.es explicando la temática y objetivos.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="faq4">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse4">
+                                        <i class="fas fa-comments me-2"></i>¿Cómo funciona el chat en tiempo real?
+                                    </button>
+                                </h2>
+                                <div id="collapse4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Cada comisión y tema tiene su propio chat donde los miembros pueden comunicarse 
+                                        en tiempo real. Los mensajes se guardan y están disponibles para consulta posterior. 
+                                        Solo los miembros aprobados de cada comisión pueden participar en los chats.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="faq5">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse5">
+                                        <i class="fas fa-file-upload me-2"></i>¿Qué tipos de archivos puedo subir?
+                                    </button>
+                                </h2>
+                                <div id="collapse5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Puede subir documentos en formatos PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, 
+                                        así como imágenes JPG, PNG y GIF. El tamaño máximo por archivo es de 16 MB. 
+                                        Los documentos quedan disponibles para todos los miembros de la comisión.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
