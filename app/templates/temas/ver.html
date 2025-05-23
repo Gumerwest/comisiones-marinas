@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+
+{% block tema_id %}{{ tema.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=tema.comision_id) }}">{{ tema.comision.nombre }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ tema.titulo }}</li>
+            </ol>
+        </nav>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2>{{ tema.titulo }}</h2>
+                
+                <div class="row mt-3">
+                    <div class="col-md-8">
+                        <h4>Resumen</h4>
+                        <p>{{ tema.resumen }}</p>
+                        
+                        {% if tema.situacion_actual %}
+                        <h4>Situación Actual</h4>
+                        <p>{{ tema.situacion_actual }}</p>
+                        {% endif %}
+                        
+                        <div class="d-flex align-items-center mt-4">
+                            <div>
+                                <span class="badge bg-primary">{{ tema.votos.count() }} votos</span>
+                                <span class="badge bg-info">{{ comentarios|length }} comentarios</span>
+                                <span class="badge bg-secondary">{{ reuniones|length }} reuniones</span>
+                            </div>
+                            
+                            <form action="{{ url_for('temas.votar', id=tema.id) }}" method="post" class="ms-3">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm {% if voto_usuario %}btn-success{% else %}btn-outline-primary{% endif %}">
+                                    <i class="fas fa-thumbs-up"></i> {% if voto_usuario %}Votado{% else %}Votar{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        {% if tema.patrocinador %}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Patrocinador</h5>
+                            </div>
+                            <div class="card-body text-center">
+                                {% if tema.logo_patrocinador_path %}
+                                <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="{{ tema.patrocinador }}" class="img-fluid mb-3" style="max-height: 100px;">
+                                {% endif %}
+                                <h5>{{ tema.patrocinador }}</h5>
+                                {% if tema.enlace_patrocinador %}
+                                <a href="{{ tema.enlace_patrocinador }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">
+                                    <i class="fas fa-external-link-alt"></i> Visitar sitio web
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if tema.solucion_patrocinador %}
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-lightbulb"></i> Solución Propuesta</h5>
+                            </div>
+                            <div class="card-body">
+                                <p style="white-space: pre-line;">{{ tema.solucion_patrocinador }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                        
+                        {% if current_user.rol == 'admin' or current_user.es_coordinador_de(tema.comision_id) %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('temas.gestionar_patrocinador', id=tema.id) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-edit"></i> Gestionar Patrocinador
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <small>Creado por {{ tema.creador.nombre }} {{ tema.creador.apellidos }} el {{ tema.fecha_creacion.strftime('%d/%m/%Y') }}</small>
+            </div>
+        </div><ul class="nav nav-tabs mb-4" id="temaTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="documentos-tab" data-bs-toggle="tab" data-bs-target="#documentos" type="button" role="tab">Documentos</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab">Chat del Tema</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="comentarios-tab" data-bs-toggle="tab" data-bs-target="#comentarios" type="button" role="tab">Comentarios</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reuniones-tab" data-bs-toggle="tab" data-bs-target="#reuniones" type="button" role="tab">Reuniones</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="temaTabContent">
+            <!-- Tab de Documentos -->
+            <div class="tab-pane fade show active" id="documentos" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Documentos del Tema</h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
+                        <i class="fas fa-upload"></i> Subir Documento
+                    </button>
+                </div>
+                
+                {% if documentos %}
+                <div class="list-group">
+                    {% for documento in documentos %}
+                    <div class="documento-item">
+                        <div class="documento-icon">
+                            {% if documento.tipo in ['pdf'] %}
+                            <i class="fas fa-file-pdf"></i>
+                            {% elif documento.tipo in ['doc', 'docx'] %}
+                            <i class="fas fa-file-word"></i>
+                            {% elif documento.tipo in ['xls', 'xlsx'] %}
+                            <i class="fas fa-file-excel"></i>
+                            {% elif documento.tipo in ['ppt', 'pptx'] %}
+                            <i class="fas fa-file-powerpoint"></i>
+                            {% elif documento.tipo in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            <i class="fas fa-file-image"></i>
+                            {% else %}
+                            <i class="fas fa-file"></i>
+                            {% endif %}
+                        </div>
+                        <div class="documento-info">
+                            <h5 class="mb-1">{{ documento.nombre }}</h5>
+                            <p class="mb-1">{{ documento.descripcion }}</p>
+                            <small class="text-muted">
+                                Subido por {{ documento.usuario.nombre }} {{ documento.usuario.apellidos }} el {{ documento.fecha_subida.strftime('%d/%m/%Y') }}
+                            </small>
+                        </div>
+                        <a href="{{ url_for('static', filename='uploads/' + documento.path) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="fas fa-download"></i> Descargar
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No hay documentos disponibles para este tema.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Tab de Chat -->
+            <div class="tab-pane fade" id="chat" role="tabpanel">
+                <h3 class="mb-3">Chat del Tema</h3>
+                <div class="card">
+                    <div class="card-body" id="chat-messages" data-current-user-id="{{ current_user.id }}">
+                        <!-- Los mensajes se cargarán aquí dinámicamente -->
+                    </div>
+                    <div class="card-footer">
+                        <form id="chat-form">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="chat-input" placeholder="Escribe un mensaje..." required>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-paper-plane"></i> Enviar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab de Comentarios -->
+            <div class="tab-pane fade" id="comentarios" role="tabpanel">
+                <h3 class="mb-4">Comentarios del Tema</h3>
+                
+                <div class="card">
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        {% if comentarios %}
+                        <div class="comentarios-container">
+                            {% for comentario in comentarios %}
+                            <div class="comentario {% if not comentario.lecturas.filter_by(usuario_id=current_user.id).first() %}comentario-nuevo{% endif %}" data-comentario-id="{{ comentario.id }}">
+                                <div class="comentario-header">
+                                    <strong>{{ comentario.usuario.nombre }} {{ comentario.usuario.apellidos }}</strong>
+                                    <small class="text-muted">{{ comentario.fecha.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                                <div class="comentario-content">
+                                    {{ comentario.contenido }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No hay comentarios en este tema. ¡Sé el primero en comentar!
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <form action="{{ url_for('temas.comentar', id=tema.id) }}" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="input-group">
+                                <textarea class="form-control" name="contenido" placeholder="Escribe un comentario..." required></textarea>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-paper-plane"></i> Enviar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab de Reuniones -->
+            <div class="tab-pane fade" id="reuniones" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Reuniones del Tema</h3>
+                    <a href="{{ url_for('temas.proponer_reunion', id=tema.id) }}" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> Proponer Reunión
+                    </a>
+                </div>
+                
+                {% if reuniones %}
+                <div class="list-group">
+                    {% for reunion in reuniones %}
+                    <div class="reunion-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5>{{ reunion.titulo }}</h5>
+                            <span class="badge {% if reunion.estado == 'aprobada' %}bg-success{% elif reunion.estado == 'pendiente_aprobacion' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ reunion.estado|replace('_', ' ')|capitalize }}
+                            </span>
+                        </div>
+                        <p>{{ reunion.descripcion }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-0 reunion-fecha">
+                                    <i class="fas fa-calendar-alt me-2"></i> {{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
+                                    {% if reunion.duracion %}
+                                    <span class="ms-2"><i class="fas fa-clock me-1"></i> {{ reunion.duracion }} minutos</span>
+                                    {% endif %}
+                                </p>
+                                {% if reunion.lugar %}
+                                <p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i> {{ reunion.lugar }}</p>
+                                {% endif %}
+                                {% if reunion.enlace_virtual %}
+                                <p class="mb-0">
+                                    <i class="fas fa-video me-2"></i> 
+                                    <a href="{{ reunion.enlace_virtual }}" target="_blank">Enlace de reunión virtual</a>
+                                </p>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">Propuesta por {{ reunion.creador.nombre }} {{ reunion.creador.apellidos }}</small>
+                        </div>
+                        
+                        {% if reunion.estado == 'pendiente_aprobacion' and (current_user.rol == 'admin' or current_user.es_coordinador_de(tema.comision_id)) %}
+                        <div class="mt-2">
+                            <form action="{{ url_for('temas.aprobar_reunion', id=reunion.id) }}" method="post" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-check"></i> Aprobar
+                                </button>
+                            </form>
+                            <form action="{{ url_for('temas.rechazar_reunion', id=reunion.id) }}" method="post" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-times"></i> Rechazar
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No hay reuniones programadas para este tema.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Modal para subir documento -->
+        <div class="modal fade" id="subirDocumentoModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Subir Documento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{{ url_for('temas.subir_documento', id=tema.id) }}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label">Nombre del Documento</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="descripcion" name="descripcion" rows="3"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="documento" class="form-label">Archivo</label>
+                                <input type="file" class="form-control" id="documento" name="documento" required>
+                                <div class="form-text">Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, GIF</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Subir</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
