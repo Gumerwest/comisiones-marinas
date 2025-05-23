@@ -23,14 +23,25 @@ def init_database():
         db.create_all()
         print("✅ Tablas creadas")
         
-        # Verificar si existe un administrador
-        admin = Usuario.query.filter_by(rol='admin').first()
-        if not admin:
-            # Crear administrador por defecto
-            admin_email = os.environ.get('ADMIN_EMAIL', 'admin@comisionesmarinas.es')
-            admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
-            
-            print(f"👤 Creando administrador: {admin_email}")
+        # Buscar o crear administrador
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@comisionesmarinas.es')
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'ComisionesMar2024!')
+        
+        # Buscar si existe el admin
+        admin = Usuario.query.filter_by(email=admin_email).first()
+        
+        if admin:
+            print(f"📝 Actualizando administrador existente: {admin_email}")
+            # Actualizar todos los campos por si acaso
+            admin.set_password(admin_password)
+            admin.activo = True
+            admin.rol = 'admin'
+            admin.nombre = 'Administrador'
+            admin.apellidos = 'Principal'
+            db.session.commit()
+            print(f"✅ Administrador actualizado")
+        else:
+            print(f"👤 Creando nuevo administrador: {admin_email}")
             
             admin = Usuario(
                 email=admin_email,
@@ -48,9 +59,17 @@ def init_database():
             db.session.add(admin)
             db.session.commit()
             print(f"✅ Administrador creado exitosamente")
-        else:
-            print("✅ Administrador ya existe")
         
+        # Verificar que se guardó correctamente
+        admin_check = Usuario.query.filter_by(email=admin_email).first()
+        if admin_check:
+            print(f"✅ Verificación: Usuario existe")
+            print(f"✅ Activo: {admin_check.activo}")
+            print(f"✅ Rol: {admin_check.rol}")
+            print(f"✅ Puede hacer login: {admin_check.check_password(admin_password)}")
+        
+        print(f"\n📧 Email: {admin_email}")
+        print(f"🔑 Contraseña: {admin_password}")
         print("🎉 Base de datos configurada correctamente")
 
 if __name__ == '__main__':
@@ -58,5 +77,7 @@ if __name__ == '__main__':
         init_database()
     except Exception as e:
         print(f"❌ Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         # Continuar de todos modos para no bloquear el deploy
         pass
