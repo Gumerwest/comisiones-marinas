@@ -36,8 +36,17 @@ def create_app(config_class=Config):
     csrf.init_app(app)
     mail.init_app(app)
     
-    # Inicializar SocketIO sin async_mode específico
-    socketio.init_app(app, cors_allowed_origins="*")
+    # Inicializar SocketIO con configuración mejorada
+    if os.environ.get('RENDER'):
+        # Configuración para producción
+        socketio.init_app(app, 
+                         cors_allowed_origins="*",
+                         async_mode='threading',
+                         logger=True,
+                         engineio_logger=True)
+    else:
+        # Configuración para desarrollo
+        socketio.init_app(app, cors_allowed_origins="*")
     
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
