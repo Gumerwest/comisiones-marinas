@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import current_user, login_required
 from app import db
-from app.models import Tema, Comision, Comentario, Documento, Reunion, Voto, LecturaComentario
+from app.models import Tema, Comision, Comentario, Documento, Reunion, Voto, LecturaComentario, Usuario
 from app.forms.temas import TemaForm, PatrocinadorForm, ComentarioForm, DocumentoForm, ReunionForm
 from werkzeug.utils import secure_filename
 import os
@@ -199,7 +199,47 @@ def rechazar_tema(id):
     db.session.commit()
     
     flash('Tema rechazado', 'success')
-    return redirect(url_for('comisiones.ver_comision', id=comision.id))@bp.route('/<int:id>/cerrar', methods=['POST'])
+    return redirect(url_for('comisiones.ver_comision', id=comision.id))
+
+@bp.route('/<int:id>/nombrar_lider/<int:usuario_id>', methods=['POST'])
+@login_required
+def nombrar_lider_tema(id, usuario_id):
+    tema = Tema.query.get_or_404(id)
+    
+    # Solo admins pueden nombrar líderes de tema
+    if current_user.rol != 'admin':
+        flash('No tiene permisos para nombrar líderes de tema', 'danger')
+        return redirect(url_for('temas.ver_tema', id=tema.id))
+    
+    # Verificar que el usuario es miembro de la comisión
+    usuario = Usuario.query.get_or_404(usuario_id)
+    if not usuario.es_miembro_de(tema.comision_id):
+        flash('El usuario debe ser miembro de la comisión para ser líder del tema', 'danger')
+        return redirect(url_for('temas.ver_tema', id=tema.id))
+    
+    tema.lider_id = usuario_id
+    db.session.commit()
+    
+    flash(f'{usuario.nombre} {usuario.apellidos} nombrado como líder del tema', 'success')
+    return redirect(url_for('temas.ver_tema', id=tema.id))
+
+@bp.route('/<int:id>/quitar_lider', methods=['POST'])
+@login_required
+def quitar_lider_tema(id):
+    tema = Tema.query.get_or_404(id)
+    
+    # Solo admins pueden quitar líderes de tema
+    if current_user.rol != 'admin':
+        flash('No tiene permisos para quitar líderes de tema', 'danger')
+        return redirect(url_for('temas.ver_tema', id=tema.id))
+    
+    tema.lider_id = None
+    db.session.commit()
+    
+    flash('Líder del tema removido', 'success')
+    return redirect(url_for('temas.ver_tema', id=tema.id))
+
+@bp.route('/<int:id>/cerrar', methods=['POST'])
 @login_required
 def cerrar_tema(id):
     tema = Tema.query.get_or_404(id)
