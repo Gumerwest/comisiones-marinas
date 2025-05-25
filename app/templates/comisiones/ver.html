@@ -25,7 +25,9 @@
                             <div class="mt-4">
                                 {% if es_miembro %}
                                     <span class="badge bg-success mb-2">Es miembro de esta comisión</span>
-                                    {% if es_coordinador %}
+                                    {% if es_lider %}
+                                        <span class="badge badge-leader mb-2">Líder de Comisión</span>
+                                    {% elif es_coordinador %}
                                         <span class="badge bg-primary mb-2">Coordinador</span>
                                     {% endif %}
                                     <div>
@@ -54,10 +56,16 @@
                             </div>
                         {% endif %}
                         
-                        <div class="mt-3">
-                            <h5>Miembros: {{ miembros|length }}</h5>
-                            <a href="{{ url_for('comisiones.listar_miembros', id=comision.id) }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-users"></i> Ver Miembros
+                        <div class="mt-3 text-center">
+                            <h5>{{ total_miembros }} Miembros</h5>
+                            {% if lideres %}
+                                <p class="mb-1"><span class="badge badge-leader">{{ lideres|length }} Líder{{ 'es' if lideres|length > 1 else '' }}</span></p>
+                            {% endif %}
+                            {% if coordinadores %}
+                                <p class="mb-1"><span class="badge bg-primary">{{ coordinadores|length }} Coordinador{{ 'es' if coordinadores|length > 1 else '' }}</span></p>
+                            {% endif %}
+                            <a href="{{ url_for('comisiones.listar_miembros', id=comision.id) }}" class="btn btn-sm btn-outline-secondary mt-2">
+                                <i class="fas fa-users"></i> Ver Todos los Miembros
                             </a>
                         </div>
                     </div>
@@ -81,7 +89,9 @@
                     </div>
                 </div>
             {% endif %}
-        </div>{% if es_miembro or current_user.rol == 'admin' %}
+        </div>
+        
+        {% if es_miembro or current_user.rol == 'admin' %}
         <!-- Tabs para contenido de la comisión -->
         <ul class="nav nav-tabs mb-4" id="comisionTab" role="tablist">
             <li class="nav-item" role="presentation">
@@ -105,17 +115,34 @@
                             <div class="col-md-6 mb-4">
                                 <div class="card h-100">
                                     {% if tema.patrocinador %}
-                                    <div class="card-header bg-light">
-                                        <div class="d-flex align-items-center">
-                                            {% if tema.logo_patrocinador_path %}
-                                            <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="{{ tema.patrocinador }}" style="height: 30px; margin-right: 10px;">
+                                    <div class="sponsor-highlight">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                {% if tema.logo_patrocinador_path %}
+                                                <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="{{ tema.patrocinador }}" style="height: 40px; margin-right: 15px;">
+                                                {% endif %}
+                                                <div>
+                                                    <small class="text-muted">Patrocinado por</small>
+                                                    <h6 class="mb-0">{{ tema.patrocinador }}</h6>
+                                                </div>
+                                            </div>
+                                            {% if tema.enlace_patrocinador %}
+                                            <a href="{{ tema.enlace_patrocinador }}" target="_blank" class="btn btn-sm btn-outline-dark">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </a>
                                             {% endif %}
-                                            <small class="text-muted">Patrocinado por {{ tema.patrocinador }}</small>
                                         </div>
                                     </div>
                                     {% endif %}
                                     <div class="card-body">
                                         <h5 class="card-title">{{ tema.titulo }}</h5>
+                                        {% if tema.lider %}
+                                        <p class="mb-2">
+                                            <span class="badge badge-leader">
+                                                <i class="fas fa-star"></i> Líder: {{ tema.lider.nombre }} {{ tema.lider.apellidos }}
+                                            </span>
+                                        </p>
+                                        {% endif %}
                                         <p class="card-text">{{ tema.resumen|truncate(150) }}</p>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
@@ -178,15 +205,15 @@
                     <div class="documento-item">
                         <div class="documento-icon">
                             {% if documento.tipo in ['pdf'] %}
-                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-file-pdf text-danger"></i>
                             {% elif documento.tipo in ['doc', 'docx'] %}
-                            <i class="fas fa-file-word"></i>
+                            <i class="fas fa-file-word text-primary"></i>
                             {% elif documento.tipo in ['xls', 'xlsx'] %}
-                            <i class="fas fa-file-excel"></i>
+                            <i class="fas fa-file-excel text-success"></i>
                             {% elif documento.tipo in ['ppt', 'pptx'] %}
-                            <i class="fas fa-file-powerpoint"></i>
+                            <i class="fas fa-file-powerpoint text-warning"></i>
                             {% elif documento.tipo in ['jpg', 'jpeg', 'png', 'gif'] %}
-                            <i class="fas fa-file-image"></i>
+                            <i class="fas fa-file-image text-info"></i>
                             {% else %}
                             <i class="fas fa-file"></i>
                             {% endif %}
@@ -250,10 +277,4 @@
             <div class="alert alert-warning">
                 <i class="fas fa-lock me-2"></i> Debe ser miembro de la comisión para ver el contenido completo.
                 {% if not current_user.is_anonymous and not solicitud_pendiente %}
-                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="alert-link">Solicitar membresía</a>.
-                {% endif %}
-            </div>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
+                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="
