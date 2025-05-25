@@ -1,5 +1,23 @@
 /* Estilos personalizados para la plataforma de Comisiones Marinas */
 
+:root {
+    --primary-color: #0056b3;
+    --secondary-color: #17a2b8;
+    --success-color: #28a745;
+    --info-color: #17a2b8;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+body {
+    background-color: #f5f7fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
 /* Estilos para la cabecera */
 .header-image {
     position: relative;
@@ -13,7 +31,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
+    background: linear-gradient(135deg, rgba(0, 86, 179, 0.9), rgba(23, 162, 184, 0.9));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -21,66 +39,163 @@
 
 .header-overlay h1 {
     color: white;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     font-size: 2.5rem;
     text-align: center;
     padding: 0 20px;
+    font-weight: 600;
 }
 
-/* Estilos para las tarjetas de comisiones */
+/* Estilos para las tarjetas */
 .card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s ease;
     border: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--card-shadow);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--hover-shadow);
+}
+
+/* Tarjetas de funciones en el panel admin */
+.function-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.function-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--hover-shadow);
+}
+
+.function-card .icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.function-card h4 {
+    color: var(--dark-color);
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.function-card .count {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.function-card .label {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Estilos para patrocinadores */
+.sponsor-card {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+}
+
+.sponsor-card:hover {
+    transform: scale(1.02);
+    box-shadow: var(--hover-shadow);
+    border-color: var(--primary-color);
+}
+
+.sponsor-card img {
+    max-height: 80px;
+    margin-bottom: 15px;
+    filter: grayscale(0%);
+    transition: filter 0.3s ease;
+}
+
+.sponsor-card:hover img {
+    filter: grayscale(0%) brightness(1.1);
+}
+
+.sponsor-highlight {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    color: #2d3436;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: var(--card-shadow);
 }
 
 /* Estilos para comentarios */
 .comentario {
-    padding: 15px;
+    padding: 20px;
     margin-bottom: 15px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
+    border-radius: 12px;
+    background-color: white;
     border-left: 4px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.comentario:hover {
+    box-shadow: var(--card-shadow);
+    transform: translateX(5px);
 }
 
 .comentario-nuevo {
-    border-left: 4px solid #0d6efd;
+    border-left: 4px solid var(--primary-color);
     background-color: #f0f7ff;
 }
 
 .comentario-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .comentario-content {
     white-space: pre-line;
+    color: #495057;
 }
 
 /* Estilos para documentos */
 .documento-item {
     display: flex;
     align-items: center;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    transition: background-color 0.2s ease;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    background-color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .documento-item:hover {
-    background-color: #e9ecef;
+    background-color: #f8f9fa;
+    box-shadow: var(--card-shadow);
+    transform: translateX(5px);
 }
 
 .documento-icon {
-    font-size: 2rem;
-    margin-right: 15px;
+    font-size: 2.5rem;
+    margin-right: 20px;
     color: #6c757d;
 }
 
@@ -90,11 +205,18 @@
 
 /* Estilos para reuniones */
 .reunion-item {
-    padding: 15px;
+    padding: 20px;
     margin-bottom: 15px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
+    border-radius: 12px;
+    background-color: white;
     border-left: 4px solid #6c757d;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.reunion-item:hover {
+    box-shadow: var(--card-shadow);
+    transform: translateX(5px);
 }
 
 .reunion-fecha {
@@ -107,82 +229,180 @@
     min-height: 400px;
     max-height: 400px;
     overflow-y: auto;
-    padding: 15px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
 }
 
 .chat-message {
     margin-bottom: 15px;
-    padding: 10px 15px;
-    border-radius: 10px;
+    padding: 12px 18px;
+    border-radius: 18px;
+    max-width: 70%;
+    word-wrap: break-word;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .own-message {
     margin-left: auto;
-    background-color: #0d6efd;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
 }
 
 .other-message {
-    background-color: #f8f9fa;
+    background-color: white;
+    border: 1px solid #e9ecef;
 }
 
 .message-header {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin-bottom: 5px;
+    opacity: 0.8;
 }
 
 .message-content {
     word-wrap: break-word;
 }
 
-/* Estilos para el panel de administración */
-.admin-stat-card {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.admin-stat-card .stat-icon {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-    color: #0d6efd;
-}
-
-.admin-stat-card .stat-value {
-    font-size: 2rem;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.admin-stat-card .stat-label {
-    color: #6c757d;
-    font-size: 1rem;
-}
-
-/* Estilos para formularios */
-.form-control:focus,
-.form-select:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
 /* Estilos para badges personalizados */
 .badge {
-    padding: 0.35em 0.65em;
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+    border-radius: 6px;
 }
 
-/* Estilos para el footer */
-footer {
-    margin-top: auto;
+.badge-leader {
+    background: linear-gradient(135deg, #f39c12, #f1c40f);
+    color: #fff;
 }
 
-/* Estilos responsivos */
+/* Estilos para botones mejorados */
+.btn {
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 86, 179, 0.3);
+}
+
+/* Lista de miembros mejorada */
+.member-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.member-card:hover {
+    box-shadow: var(--card-shadow);
+    transform: translateY(-2px);
+}
+
+.member-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+/* Navbar mejorado */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-dark {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+}
+
+/* Alertas mejoradas */
+.alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Tablas mejoradas */
+.table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Modal mejorado */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Breadcrumb mejorado */
+.breadcrumb {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .header-overlay h1 {
         font-size: 1.8rem;
+    }
+    
+    .function-card {
+        padding: 20px;
+    }
+    
+    .function-card .icon {
+        font-size: 2.5rem;
     }
     
     .documento-item {
@@ -194,7 +414,26 @@ footer {
         margin-bottom: 10px;
     }
     
-    .admin-stat-card {
-        margin-bottom: 15px;
+    .member-card {
+        padding: 15px;
     }
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
