@@ -305,7 +305,7 @@ def subir_documento(id):
         # Guardar archivo
         file = form.documento.data
         filename = secure_filename(file.filename)
-        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+        filename = f"tema_{tema.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
@@ -391,7 +391,7 @@ def aprobar_reunion(id):
         'tema_titulo': tema.titulo,
         'reunion_titulo': reunion.titulo,
         'reunion_fecha': reunion.fecha.strftime('%d/%m/%Y %H:%M'),
-        'reunion_lugar': reunion.lugar
+        'reunion_lugar': reunion.lugar or 'Virtual'
     })
     
     flash('Reunión aprobada correctamente', 'success')
