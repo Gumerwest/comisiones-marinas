@@ -11,7 +11,7 @@ class MembresiaComision(db.Model):
     comision_id = db.Column(db.Integer, db.ForeignKey('comision.id'), nullable=False)
     fecha_solicitud = db.Column(db.DateTime, default=datetime.utcnow)
     estado = db.Column(db.String(20), default='pendiente_aprobacion')  # pendiente_aprobacion, aprobado, rechazado
-    rol = db.Column(db.String(20), default='miembro')  # miembro, coordinador
+    rol = db.Column(db.String(20), default='miembro')  # miembro, coordinador, lider
     
     usuario = db.relationship('Usuario', back_populates='membresias')
     comision = db.relationship('Comision', back_populates='membresias')
@@ -57,6 +57,7 @@ class Usuario(UserMixin, db.Model):
     # Relaciones
     membresias = db.relationship('MembresiaComision', back_populates='usuario', lazy='dynamic')
     temas_creados = db.relationship('Tema', back_populates='creador', lazy='dynamic')
+    temas_liderados = db.relationship('Tema', foreign_keys='Tema.lider_id', back_populates='lider', lazy='dynamic')
     comentarios = db.relationship('Comentario', back_populates='usuario', lazy='dynamic')
     documentos = db.relationship('Documento', back_populates='usuario', lazy='dynamic')
     documentos_comision = db.relationship('DocumentoComision', back_populates='usuario', lazy='dynamic')
@@ -83,6 +84,13 @@ class Usuario(UserMixin, db.Model):
             estado='aprobado'
         ).first()
         return membresia is not None and membresia.rol == 'coordinador'
+    
+    def es_lider_de(self, comision_id):
+        membresia = self.membresias.filter_by(
+            comision_id=comision_id, 
+            estado='aprobado'
+        ).first()
+        return membresia is not None and membresia.rol == 'lider'
     
     def ha_votado(self, tema_id):
         return self.votos.filter_by(tema_id=tema_id).first() is not None
@@ -122,6 +130,7 @@ class Tema(db.Model):
     estado = db.Column(db.String(20), default='pendiente_aprobacion')  # pendiente_aprobacion, aprobado, rechazado, cerrado
     comision_id = db.Column(db.Integer, db.ForeignKey('comision.id'), nullable=False)
     creador_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    lider_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
     
     # Información del patrocinador
     patrocinador = db.Column(db.String(100))
@@ -131,7 +140,8 @@ class Tema(db.Model):
     
     # Relaciones
     comision = db.relationship('Comision', back_populates='temas')
-    creador = db.relationship('Usuario', back_populates='temas_creados')
+    creador = db.relationship('Usuario', foreign_keys=[creador_id], back_populates='temas_creados')
+    lider = db.relationship('Usuario', foreign_keys=[lider_id], back_populates='temas_liderados')
     comentarios = db.relationship('Comentario', back_populates='tema', lazy='dynamic')
     documentos = db.relationship('Documento', back_populates='tema', lazy='dynamic')
     reuniones = db.relationship('Reunion', back_populates='tema', lazy='dynamic')
