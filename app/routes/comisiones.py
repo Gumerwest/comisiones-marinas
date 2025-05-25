@@ -22,6 +22,7 @@ def ver_comision(id):
     comision = Comision.query.get_or_404(id)
     es_miembro = current_user.es_miembro_de(comision.id)
     es_coordinador = current_user.es_coordinador_de(comision.id)
+    es_lider = current_user.es_lider_de(comision.id)
     
     # Verificar si ya tiene una solicitud pendiente
     solicitud_pendiente = MembresiaComision.query.filter_by(
@@ -36,20 +37,31 @@ def ver_comision(id):
         estado='aprobado'
     ).order_by(Tema.fecha_creacion.desc()).all()
     
-    # Obtener miembros de la comisión
-    miembros = Usuario.query.join(MembresiaComision).filter(
+    # Obtener miembros de la comisión con sus roles
+    miembros_query = db.session.query(Usuario, MembresiaComision).join(
+        MembresiaComision, Usuario.id == MembresiaComision.usuario_id
+    ).filter(
         MembresiaComision.comision_id == comision.id,
         MembresiaComision.estado == 'aprobado'
     ).all()
+    
+    # Organizar miembros por rol
+    lideres = [(u, m) for u, m in miembros_query if m.rol == 'lider']
+    coordinadores = [(u, m) for u, m in miembros_query if m.rol == 'coordinador']
+    miembros = [(u, m) for u, m in miembros_query if m.rol == 'miembro']
     
     return render_template('comisiones/ver.html', 
                           title=comision.nombre,
                           comision=comision,
                           es_miembro=es_miembro,
                           es_coordinador=es_coordinador,
+                          es_lider=es_lider,
                           solicitud_pendiente=solicitud_pendiente,
                           temas=temas,
-                          miembros=miembros)
+                          lideres=lideres,
+                          coordinadores=coordinadores,
+                          miembros=miembros,
+                          total_miembros=len(miembros_query))
 
 @bp.route('/crear', methods=['GET', 'POST'])
 @login_required
@@ -182,13 +194,18 @@ def listar_miembros(id):
         flash('Debe ser miembro de la comisión para ver la lista completa de miembros', 'warning')
         return redirect(url_for('comisiones.ver_comision', id=comision.id))
     
-    # Obtener miembros aprobados
-    miembros = db.session.query(Usuario, MembresiaComision).join(
+    # Obtener miembros aprobados con sus roles
+    miembros_query = db.session.query(Usuario, MembresiaComision).join(
         MembresiaComision, Usuario.id == MembresiaComision.usuario_id
     ).filter(
         MembresiaComision.comision_id == comision.id,
         MembresiaComision.estado == 'aprobado'
     ).all()
+    
+    # Organizar miembros por rol
+    lideres = [(u, m) for u, m in miembros_query if m.rol == 'lider']
+    coordinadores = [(u, m) for u, m in miembros_query if m.rol == 'coordinador']
+    miembros = [(u, m) for u, m in miembros_query if m.rol == 'miembro']
     
     # Si es admin o coordinador, mostrar también solicitudes pendientes
     solicitudes = []
@@ -203,6 +220,8 @@ def listar_miembros(id):
     return render_template('comisiones/miembros.html',
                           title=f'Miembros de {comision.nombre}',
                           comision=comision,
+                          lideres=lideres,
+                          coordinadores=coordinadores,
                           miembros=miembros,
                           solicitudes=solicitudes,
                           es_coordinador=current_user.es_coordinador_de(comision.id))
@@ -258,8 +277,8 @@ def rechazar_miembro(comision_id, usuario_id):
 @bp.route('/<int:comision_id>/nombrar_coordinador/<int:usuario_id>', methods=['POST'])
 @login_required
 def nombrar_coordinador(comision_id, usuario_id):
-    # Solo admins o coordinadores pueden nombrar coordinadores
-    if current_user.rol != 'admin' and not current_user.es_coordinador_de(comision_id):
+    # Solo admins pueden nombrar coordinadores
+    if current_user.rol != 'admin':
         flash('No tiene permisos para nombrar coordinadores', 'danger')
         return redirect(url_for('comisiones.listar_miembros', id=comision_id))
     
@@ -273,6 +292,26 @@ def nombrar_coordinador(comision_id, usuario_id):
     db.session.commit()
     
     flash('Coordinador nombrado correctamente', 'success')
+    return redirect(url_for('comisiones.listar_miembros', id=comision_id))
+
+@bp.route('/<int:comision_id>/nombrar_lider/<int:usuario_id>', methods=['POST'])
+@login_required
+def nombrar_lider(comision_id, usuario_id):
+    # Solo admins pueden nombrar líderes
+    if current_user.rol != 'admin':
+        flash('No tiene permisos para nombrar líderes', 'danger')
+        return redirect(url_for('comisiones.listar_miembros', id=comision_id))
+    
+    membresia = MembresiaComision.query.filter_by(
+        comision_id=comision_id,
+        usuario_id=usuario_id,
+        estado='aprobado'
+    ).first_or_404()
+    
+    membresia.rol = 'lider'
+    db.session.commit()
+    
+    flash('Líder nombrado correctamente', 'success')
     return redirect(url_for('comisiones.listar_miembros', id=comision_id))
 
 @bp.route('/<int:comision_id>/quitar_coordinador/<int:usuario_id>', methods=['POST'])
@@ -294,6 +333,51 @@ def quitar_coordinador(comision_id, usuario_id):
     db.session.commit()
     
     flash('Rol de coordinador revocado correctamente', 'success')
+    return redirect(url_for('comisiones.listar_miembros', id=comision_id))
+
+@bp.route('/<int:comision_id>/quitar_lider/<int:usuario_id>', methods=['POST'])
+@login_required
+def quitar_lider(comision_id, usuario_id):
+    # Solo admins pueden quitar líderes
+    if current_user.rol != 'admin':
+        flash('No tiene permisos para quitar líderes', 'danger')
+        return redirect(url_for('comisiones.listar_miembros', id=comision_id))
+    
+    membresia = MembresiaComision.query.filter_by(
+        comision_id=comision_id,
+        usuario_id=usuario_id,
+        estado='aprobado',
+        rol='lider'
+    ).first_or_404()
+    
+    membresia.rol = 'miembro'
+    db.session.commit()
+    
+    flash('Rol de líder revocado correctamente', 'success')
+    return redirect(url_for('comisiones.listar_miembros', id=comision_id))
+
+@bp.route('/<int:comision_id>/eliminar_miembro/<int:usuario_id>', methods=['POST'])
+@login_required
+def eliminar_miembro(comision_id, usuario_id):
+    # Solo admins pueden eliminar miembros
+    if current_user.rol != 'admin':
+        flash('No tiene permisos para eliminar miembros', 'danger')
+        return redirect(url_for('comisiones.listar_miembros', id=comision_id))
+    
+    # No permitir que se elimine a sí mismo
+    if usuario_id == current_user.id:
+        flash('No puede eliminarse a sí mismo de la comisión', 'danger')
+        return redirect(url_for('comisiones.listar_miembros', id=comision_id))
+    
+    membresia = MembresiaComision.query.filter_by(
+        comision_id=comision_id,
+        usuario_id=usuario_id
+    ).first_or_404()
+    
+    db.session.delete(membresia)
+    db.session.commit()
+    
+    flash('Miembro eliminado de la comisión correctamente', 'success')
     return redirect(url_for('comisiones.listar_miembros', id=comision_id))
 
 @bp.route('/<int:id>/eliminar', methods=['POST'])
