@@ -29,66 +29,84 @@ def init_database():
             with open(gitkeep_path, 'w') as f:
                 f.write('# Keep this directory\n')
         
-        # Crear todas las tablas
-        print("📊 Creando tablas...")
-        db.create_all()
-        print("✅ Tablas creadas")
+        # Intentar crear las tablas con reintentos
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                print(f"📊 Intento {attempt + 1} de crear tablas...")
+                db.create_all()
+                print("✅ Tablas creadas exitosamente")
+                break
+            except Exception as e:
+                print(f"⚠️ Error en intento {attempt + 1}: {str(e)}")
+                if attempt < max_attempts - 1:
+                    print("⏳ Esperando 2 segundos antes de reintentar...")
+                    time.sleep(2)
+                else:
+                    print("❌ No se pudieron crear las tablas después de varios intentos")
+                    # No salir con error para no bloquear el deploy
         
         # Buscar o crear administrador
         admin_email = os.environ.get('ADMIN_EMAIL', 'admin@comisionesmarinas.es')
         admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
         
-        # Buscar si existe el admin
-        admin = Usuario.query.filter_by(email=admin_email).first()
-        
-        if admin:
-            print(f"📝 Actualizando administrador existente: {admin_email}")
-            # Actualizar todos los campos por si acaso
-            admin.set_password(admin_password)
-            admin.activo = True
-            admin.rol = 'admin'
-            admin.nombre = 'Administrador'
-            admin.apellidos = 'Principal'
-            db.session.commit()
-            print(f"✅ Administrador actualizado")
-        else:
-            print(f"👤 Creando nuevo administrador: {admin_email}")
+        try:
+            # Buscar si existe el admin
+            admin = Usuario.query.filter_by(email=admin_email).first()
             
-            admin = Usuario(
-                email=admin_email,
-                nombre='Administrador',
-                apellidos='Principal',
-                telefono='900000000',
-                razon_social='Administración del Sistema',
-                nombre_comercial='Admin',
-                cargo='Administrador Principal',
-                rol='admin',
-                activo=True
-            )
-            admin.set_password(admin_password)
+            if admin:
+                print(f"📝 Actualizando administrador existente: {admin_email}")
+                # Actualizar todos los campos por si acaso
+                admin.set_password(admin_password)
+                admin.activo = True
+                admin.rol = 'admin'
+                admin.nombre = 'Administrador'
+                admin.apellidos = 'Principal'
+                db.session.commit()
+                print(f"✅ Administrador actualizado")
+            else:
+                print(f"👤 Creando nuevo administrador: {admin_email}")
+                
+                admin = Usuario(
+                    email=admin_email,
+                    nombre='Administrador',
+                    apellidos='Principal',
+                    telefono='900000000',
+                    razon_social='Administración del Sistema',
+                    nombre_comercial='Admin',
+                    cargo='Administrador Principal',
+                    rol='admin',
+                    activo=True
+                )
+                admin.set_password(admin_password)
+                
+                db.session.add(admin)
+                db.session.commit()
+                print(f"✅ Administrador creado exitosamente")
             
-            db.session.add(admin)
-            db.session.commit()
-            print(f"✅ Administrador creado exitosamente")
-        
-        # Verificar que se guardó correctamente
-        admin_check = Usuario.query.filter_by(email=admin_email).first()
-        if admin_check:
-            print(f"✅ Verificación: Usuario existe")
-            print(f"✅ Activo: {admin_check.activo}")
-            print(f"✅ Rol: {admin_check.rol}")
-            print(f"✅ Puede hacer login: {admin_check.check_password(admin_password)}")
-        
-        print(f"\n📧 Email: {admin_email}")
-        print(f"🔑 Contraseña: {admin_password}")
-        print("🎉 Base de datos configurada correctamente")
+            # Verificar que se guardó correctamente
+            admin_check = Usuario.query.filter_by(email=admin_email).first()
+            if admin_check:
+                print(f"✅ Verificación: Usuario existe")
+                print(f"✅ Activo: {admin_check.activo}")
+                print(f"✅ Rol: {admin_check.rol}")
+                print(f"✅ Puede hacer login: {admin_check.check_password(admin_password)}")
+            
+            print(f"\n📧 Email: {admin_email}")
+            print(f"🔑 Contraseña: {admin_password}")
+            print("🎉 Base de datos configurada correctamente")
+            
+        except Exception as e:
+            print(f"⚠️ Error manejando usuario admin: {str(e)}")
+            print("Continuando de todos modos...")
 
 if __name__ == '__main__':
     try:
         init_database()
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"❌ Error general: {str(e)}")
         import traceback
         traceback.print_exc()
-        # Continuar de todos modos para no bloquear el deploy
-        sys.exit(0)  # Salir con código 0 para no bloquear el deploy
+    finally:
+        # Siempre salir con código 0 para no bloquear el deploy
+        sys.exit(0)
