@@ -1,124 +1,252 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Gestión de Usuarios</h2>
-            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Volver al panel
-            </a>
+<div class="fade-in-up">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users me-2"></i>Gestión de Usuarios</h2>
+                <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al panel
+                </a>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Usuario</th>
-                                <th>Email</th>
-                                <th>Empresa</th>
-                                <th>Estado</th>
-                                <th>Rol</th>
-                                <th>Registro</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for usuario in usuarios %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="member-avatar me-3">
-                                            {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
+    <!-- Filtros y estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ usuarios|selectattr('activo', 'equalto', true)|list|length }}</h3>
+                    <small class="text-muted">Usuarios Activos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ usuarios|selectattr('activo', 'equalto', false)|list|length }}</h3>
+                    <small class="text-muted">Pendientes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-danger">{{ usuarios|selectattr('rol', 'equalto', 'admin')|list|length }}</h3>
+                    <small class="text-muted">Administradores</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ usuarios|length }}</h3>
+                    <small class="text-muted">Total Usuarios</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Lista de Usuarios</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Contacto</th>
+                                    <th>Empresa</th>
+                                    <th>Estado</th>
+                                    <th>Rol</th>
+                                    <th>Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios %}
+                                <tr class="{% if not usuario.activo %}table-warning{% endif %}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="member-avatar me-3">
+                                                {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ usuario.nombre }} {{ usuario.apellidos }}</h6>
+                                                <small class="text-muted">{{ usuario.cargo }}</small>
+                                            </div>
                                         </div>
+                                    </td>
+                                    <td>
                                         <div>
-                                            <strong>{{ usuario.nombre }} {{ usuario.apellidos }}</strong>
-                                            <br>
-                                            <small class="text-muted">{{ usuario.cargo }}</small>
+                                            <i class="fas fa-envelope me-1 text-primary"></i>
+                                            <a href="mailto:{{ usuario.email }}" class="text-decoration-none">{{ usuario.email }}</a>
                                         </div>
-                                    </div>
-                                </td>
-                                <td>{{ usuario.email }}</td>
-                                <td>{{ usuario.razon_social }}</td>
-                                <td>
-                                    {% if usuario.activo %}
-                                        <span class="badge bg-success">Activo</span>
-                                    {% else %}
-                                        <span class="badge bg-warning text-dark">Pendiente</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if usuario.rol == 'admin' %}
-                                        <span class="badge bg-danger">Admin</span>
-                                    {% else %}
-                                        <span class="badge bg-primary">Usuario</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y') }}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ url_for('admin.ver_usuario', id=usuario.id) }}" class="btn btn-info" title="Ver detalles">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        
-                                        {% if not usuario.activo %}
-                                            <form action="{{ url_for('admin.aprobar_usuario', id=usuario.id) }}" method="post" class="d-inline">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-success" title="Aprobar">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
-                                            <form action="{{ url_for('admin.rechazar_usuario', id=usuario.id) }}" method="post" class="d-inline">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-danger" title="Rechazar">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </form>
-                                        {% else %}
-                                            {% if usuario.rol != 'admin' %}
-                                                <form action="{{ url_for('admin.hacer_admin', id=usuario.id) }}" method="post" class="d-inline">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-warning" title="Hacer Admin">
-                                                        <i class="fas fa-crown"></i>
-                                                    </button>
-                                                </form>
-                                            {% elif usuario.id != current_user.id %}
-                                                <form action="{{ url_for('admin.quitar_admin', id=usuario.id) }}" method="post" class="d-inline">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-secondary" title="Quitar Admin">
-                                                        <i class="fas fa-user"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                            
-                                            <form action="{{ url_for('admin.resetear_password', id=usuario.id) }}" method="post" class="d-inline">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-info" title="Resetear Contraseña">
-                                                    <i class="fas fa-key"></i>
-                                                </button>
-                                            </form>
-                                            
-                                            {% if usuario.id != current_user.id %}
-                                                <form action="{{ url_for('admin.eliminar_usuario', id=usuario.id) }}" method="post" class="d-inline">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-danger" title="Eliminar" data-confirm="¿Está seguro de que desea eliminar este usuario? Esta acción no se puede deshacer.">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
+                                        {% if usuario.telefono %}
+                                        <div>
+                                            <i class="fas fa-phone me-1 text-success"></i>
+                                            <a href="tel:{{ usuario.telefono }}" class="text-decoration-none">{{ usuario.telefono }}</a>
+                                        </div>
                                         {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ usuario.razon_social }}</strong>
+                                        </div>
+                                        {% if usuario.nombre_comercial != usuario.razon_social %}
+                                        <small class="text-muted">{{ usuario.nombre_comercial }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if usuario.activo %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Activo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-clock me-1"></i>Pendiente
+                                            </span>
+                                        {% endif %}
+                                        {% if usuario.ultimo_acceso %}
+                                        <br><small class="text-muted">Último: {{ usuario.ultimo_acceso.strftime('%d/%m/%Y') }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if usuario.rol == 'admin' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-crown me-1"></i>Admin
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-user me-1"></i>Usuario
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span>{{ usuario.fecha_registro.strftime('%d/%m/%Y') }}</span>
+                                        <br><small class="text-muted">{{ usuario.fecha_registro.strftime('%H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group-vertical btn-group-sm" role="group">
+                                            <!-- Botón principal de ver detalles -->
+                                            <a href="{{ url_for('admin.ver_usuario', id=usuario.id) }}" class="btn btn-info btn-sm" title="Ver detalles completos">
+                                                <i class="fas fa-eye me-1"></i>Ver Detalles
+                                            </a>
+                                            
+                                            {% if not usuario.activo %}
+                                                <!-- Usuario pendiente de aprobación -->
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <form action="{{ url_for('admin.aprobar_usuario', id=usuario.id) }}" method="post" class="d-inline">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <button type="submit" class="btn btn-success btn-sm" title="Aprobar usuario">
+                                                            <i class="fas fa-check me-1"></i>Aprobar
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ url_for('admin.rechazar_usuario', id=usuario.id) }}" method="post" class="d-inline">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <button type="submit" class="btn btn-danger btn-sm" title="Rechazar usuario" data-confirm="¿Está seguro de rechazar y eliminar este usuario?">
+                                                            <i class="fas fa-times me-1"></i>Rechazar
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            {% else %}
+                                                <!-- Usuario activo - más opciones -->
+                                                <div class="dropdown">
+                                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-cog me-1"></i>Gestionar
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><h6 class="dropdown-header">Permisos</h6></li>
+                                                        {% if usuario.rol != 'admin' %}
+                                                        <li>
+                                                            <form action="{{ url_for('admin.hacer_admin', id=usuario.id) }}" method="post">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <button type="submit" class="dropdown-item">
+                                                                    <i class="fas fa-crown me-2"></i>Hacer Administrador
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% elif usuario.id != current_user.id %}
+                                                        <li>
+                                                            <form action="{{ url_for('admin.quitar_admin', id=usuario.id) }}" method="post">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <button type="submit" class="dropdown-item text-warning">
+                                                                    <i class="fas fa-user me-2"></i>Quitar Admin
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% endif %}
+                                                        
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><h6 class="dropdown-header">Seguridad</h6></li>
+                                                        <li>
+                                                            <form action="{{ url_for('admin.resetear_password', id=usuario.id) }}" method="post">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <button type="submit" class="dropdown-item text-info">
+                                                                    <i class="fas fa-key me-2"></i>Resetear Contraseña
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        
+                                                        {% if usuario.id != current_user.id %}
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li><h6 class="dropdown-header">Peligroso</h6></li>
+                                                        <li>
+                                                            <form action="{{ url_for('admin.eliminar_usuario', id=usuario.id) }}" method="post">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <button type="submit" class="dropdown-item text-danger" data-confirm="¿Está seguro de eliminar este usuario? Esta acción eliminará también todas sus membresías, comentarios y documentos. No se puede deshacer.">
+                                                                    <i class="fas fa-trash me-2"></i>Eliminar Usuario
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de ayuda -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5><i class="fas fa-info-circle me-2"></i>Información sobre la Gestión de Usuarios</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Estados de Usuario:</h6>
+                            <ul class="list-unstyled">
+                                <li><span class="badge bg-success me-2">Activo</span>Usuario aprobado y puede acceder a la plataforma</li>
+                                <li><span class="badge bg-warning text-dark me-2">Pendiente</span>Usuario registrado pero pendiente de aprobación</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Roles de Usuario:</h6>
+                            <ul class="list-unstyled">
+                                <li><span class="badge bg-danger me-2">Admin</span>Acceso completo al sistema y gestión</li>
+                                <li><span class="badge bg-primary me-2">Usuario</span>Acceso básico para participar en comisiones</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Importante:</strong> Al eliminar un usuario se borrarán permanentemente todos sus comentarios, documentos subidos y membresías en comisiones. Esta acción no se puede deshacer.
+                    </div>
                 </div>
             </div>
         </div>
