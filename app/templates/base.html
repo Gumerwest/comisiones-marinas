@@ -23,8 +23,12 @@
             </div>
         </div>
         
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container">
+                <a class="navbar-brand d-lg-none" href="{{ url_for('main.index') }}">
+                    <i class="fas fa-ship me-2"></i>Comisiones Marinas
+                </a>
+                
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -32,45 +36,82 @@
                 <div class="collapse navbar-collapse" id="navbarMain">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.index') }}">Inicio</a>
+                            <a class="nav-link" href="{{ url_for('main.index') }}">
+                                <i class="fas fa-home me-1"></i>Inicio
+                            </a>
                         </li>
                         {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a>
+                            <a class="nav-link" href="{{ url_for('comisiones.listar_comisiones') }}">
+                                <i class="fas fa-ship me-1"></i>Comisiones
+                            </a>
                         </li>
                         {% endif %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.acerca') }}">Acerca de</a>
+                            <a class="nav-link" href="{{ url_for('main.acerca') }}">
+                                <i class="fas fa-info-circle me-1"></i>Acerca de
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.contacto') }}">Contacto</a>
+                            <a class="nav-link" href="{{ url_for('main.contacto') }}">
+                                <i class="fas fa-envelope me-1"></i>Contacto
+                            </a>
                         </li>
                     </ul>
                     
                     <ul class="navbar-nav ms-auto">
                         {% if current_user.is_anonymous %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('auth.login') }}">Iniciar Sesión</a>
+                                <a class="nav-link" href="{{ url_for('auth.login') }}">
+                                    <i class="fas fa-sign-in-alt me-1"></i>Iniciar Sesión
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('auth.registro') }}">Registro</a>
+                                <a class="nav-link" href="{{ url_for('auth.registro') }}">
+                                    <i class="fas fa-user-plus me-1"></i>Registro
+                                </a>
                             </li>
                         {% else %}
                             {% if current_user.rol == 'admin' %}
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ url_for('admin.index') }}">
-                                        <i class="fas fa-cog"></i> Administración
+                                        <i class="fas fa-cog me-1"></i>
+                                        <span class="d-none d-lg-inline">Administración</span>
+                                        <span class="d-lg-none">Admin</span>
                                     </a>
                                 </li>
                             {% endif %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-user"></i> {{ current_user.nombre }}
+                                    <div class="d-inline-flex align-items-center">
+                                        <div class="member-avatar me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                            {{ current_user.nombre[0] }}{{ current_user.apellidos[0] }}
+                                        </div>
+                                        <span class="d-none d-md-inline">{{ current_user.nombre }}</span>
+                                        <span class="d-md-none">Perfil</span>
+                                    </div>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="{{ url_for('auth.perfil') }}">Mi Perfil</a></li>
+                                    <li>
+                                        <div class="dropdown-item-text">
+                                            <small class="text-muted">Conectado como</small>
+                                            <br><strong>{{ current_user.nombre }} {{ current_user.apellidos }}</strong>
+                                            <br><small class="text-muted">{{ current_user.email }}</small>
+                                        </div>
+                                    </li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Cerrar Sesión</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('auth.perfil') }}">
+                                        <i class="fas fa-user me-2"></i>Mi Perfil
+                                    </a></li>
+                                    {% if current_user.rol == 'admin' %}
+                                    <li><a class="dropdown-item" href="{{ url_for('admin.index') }}">
+                                        <i class="fas fa-cog me-2"></i>Panel Admin
+                                    </a></li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                                    </a></li>
                                 </ul>
                             </li>
                         {% endif %}
@@ -83,45 +124,110 @@
     <main class="container my-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
+                <div class="alerts-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {% if category == 'success' %}
+                                <i class="fas fa-check-circle me-2"></i>
+                            {% elif category == 'warning' %}
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle me-2"></i>
+                            {% endif %}
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
         
         {% block content %}{% endblock %}
     </main>
     
-    <footer class="bg-dark text-white py-4 mt-5">
+    <footer class="bg-dark text-white py-5 mt-5">
         <div class="container">
             <div class="row">
-                <div class="col-md-4">
-                    <h5>Comisiones Marinas</h5>
-                    <p>Plataforma colaborativa para profesionales del sector marítimo español.</p>
+                <div class="col-md-4 mb-4">
+                    <h5><i class="fas fa-ship me-2"></i>Comisiones Marinas</h5>
+                    <p class="text-light">Plataforma colaborativa para profesionales del sector marítimo español. Fomentando la innovación y el desarrollo sostenible del sector naval.</p>
+                    <div class="social-links">
+                        <a href="#" class="text-light me-3" title="LinkedIn">
+                            <i class="fab fa-linkedin fa-lg"></i>
+                        </a>
+                        <a href="#" class="text-light me-3" title="Twitter">
+                            <i class="fab fa-twitter fa-lg"></i>
+                        </a>
+                        <a href="#" class="text-light" title="Email">
+                            <i class="fas fa-envelope fa-lg"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <h5>Enlaces</h5>
+                <div class="col-md-4 mb-4">
+                    <h5><i class="fas fa-sitemap me-2"></i>Navegación</h5>
                     <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.index') }}" class="text-white">Inicio</a></li>
-                        <li><a href="{{ url_for('main.acerca') }}" class="text-white">Acerca de</a></li>
-                        <li><a href="{{ url_for('main.contacto') }}" class="text-white">Contacto</a></li>
+                        <li class="mb-2"><a href="{{ url_for('main.index') }}" class="text-light text-decoration-none">
+                            <i class="fas fa-home me-2"></i>Inicio
+                        </a></li>
+                        {% if current_user.is_authenticated %}
+                        <li class="mb-2"><a href="{{ url_for('comisiones.listar_comisiones') }}" class="text-light text-decoration-none">
+                            <i class="fas fa-ship me-2"></i>Comisiones
+                        </a></li>
+                        {% endif %}
+                        <li class="mb-2"><a href="{{ url_for('main.acerca') }}" class="text-light text-decoration-none">
+                            <i class="fas fa-info-circle me-2"></i>Acerca de
+                        </a></li>
+                        <li class="mb-2"><a href="{{ url_for('main.contacto') }}" class="text-light text-decoration-none">
+                            <i class="fas fa-envelope me-2"></i>Contacto
+                        </a></li>
                     </ul>
                 </div>
-                <div class="col-md-4">
-                    <h5>Contacto</h5>
-                    <address>
-                        <i class="fas fa-envelope"></i> info@comisionesmarinas.es<br>
-                        <i class="fas fa-phone"></i> +34 900 123 456<br>
-                        <i class="fas fa-map-marker-alt"></i> Madrid, España
+                <div class="col-md-4 mb-4">
+                    <h5><i class="fas fa-address-card me-2"></i>Contacto</h5>
+                    <address class="text-light">
+                        <div class="mb-2">
+                            <i class="fas fa-envelope me-2 text-primary"></i>
+                            <a href="mailto:info@comisionesmarinas.es" class="text-light text-decoration-none">
+                                info@comisionesmarinas.es
+                            </a>
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-phone me-2 text-success"></i>
+                            <a href="tel:+34900123456" class="text-light text-decoration-none">
+                                +34 900 123 456
+                            </a>
+                        </div>
+                        <div class="mb-2">
+                            <i class="fas fa-map-marker-alt me-2 text-warning"></i>
+                            Madrid, España
+                        </div>
                     </address>
+                    
+                    <div class="mt-3">
+                        <h6><i class="fas fa-clock me-2"></i>Horario de Atención</h6>
+                        <small class="text-light">
+                            Lunes a Viernes: 9:00 - 18:00<br>
+                            Sábados: 9:00 - 14:00
+                        </small>
+                    </div>
                 </div>
             </div>
-            <hr>
-            <div class="text-center">
-                <p class="mb-0">&copy; 2024 Comisiones de Trabajo Marinas de España. Todos los derechos reservados.</p>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0 text-light">
+                        &copy; 2024 Comisiones de Trabajo Marinas de España. 
+                        <small>Todos los derechos reservados.</small>
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-light">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Plataforma segura y conforme con GDPR
+                    </small>
+                </div>
             </div>
         </div>
     </footer>
@@ -138,5 +244,52 @@
     {% endif %}
     
     {% block scripts %}{% endblock %}
+    
+    <!-- Script para mejorar la experiencia de usuario -->
+    <script>
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert-dismissible');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const closeBtn = alert.querySelector('.btn-close');
+                    if (closeBtn && alert.classList.contains('show')) {
+                        closeBtn.click();
+                    }
+                }, 5000);
+            });
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // Add loading state to buttons on form submit
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        const originalText = submitBtn.innerHTML;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+                        
+                        // Re-enable after 10 seconds as fallback
+                        setTimeout(() => {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }, 10000);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
