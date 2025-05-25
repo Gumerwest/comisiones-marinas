@@ -20,6 +20,7 @@ def index():
     comisiones_count = Comision.query.count()
     temas_count = Tema.query.count()
     temas_pendientes = Tema.query.filter_by(estado='pendiente_aprobacion').count()
+    membresias_pendientes = MembresiaComision.query.filter_by(estado='pendiente_aprobacion').count()
     
     return render_template('admin/index.html', 
                           title='Panel de Administración',
@@ -27,7 +28,8 @@ def index():
                           usuarios_pendientes=usuarios_pendientes,
                           comisiones_count=comisiones_count,
                           temas_count=temas_count,
-                          temas_pendientes=temas_pendientes)
+                          temas_pendientes=temas_pendientes,
+                          membresias_pendientes=membresias_pendientes)
 
 @bp.route('/usuarios')
 @login_required
@@ -41,6 +43,27 @@ def listar_usuarios():
     return render_template('admin/usuarios.html', 
                           title='Gestión de Usuarios',
                           usuarios=usuarios)
+
+@bp.route('/usuarios/<int:id>')
+@login_required
+def ver_usuario(id):
+    # Verificar que el usuario es administrador
+    if current_user.rol != 'admin':
+        flash('No tiene permisos para acceder a esta sección', 'danger')
+        return redirect(url_for('main.index'))
+    
+    usuario = Usuario.query.get_or_404(id)
+    # Obtener membresías del usuario
+    membresias = db.session.query(MembresiaComision, Comision).join(
+        Comision, MembresiaComision.comision_id == Comision.id
+    ).filter(
+        MembresiaComision.usuario_id == usuario.id
+    ).all()
+    
+    return render_template('admin/usuario_detalle.html',
+                          title=f'Detalles de {usuario.nombre} {usuario.apellidos}',
+                          usuario=usuario,
+                          membresias=membresias)
 
 @bp.route('/usuarios/<int:id>/aprobar', methods=['POST'])
 @login_required
@@ -70,6 +93,30 @@ def rechazar_usuario(id):
     db.session.commit()
     
     flash('Usuario rechazado y eliminado correctamente', 'success')
+    return redirect(url_for('admin.listar_usuarios'))
+
+@bp.route('/usuarios/<int:id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_usuario(id):
+    # Verificar que el usuario es administrador
+    if current_user.rol != 'admin':
+        flash('No tiene permisos para realizar esta acción', 'danger')
+        return redirect(url_for('main.index'))
+    
+    # No permitir eliminar al propio usuario
+    if id == current_user.id:
+        flash('No puede eliminarse a sí mismo', 'danger')
+        return redirect(url_for('admin.listar_usuarios'))
+    
+    usuario = Usuario.query.get_or_404(id)
+    
+    # Eliminar todas las relaciones del usuario antes de eliminarlo
+    MembresiaComision.query.filter_by(usuario_id=id).delete()
+    
+    db.session.delete(usuario)
+    db.session.commit()
+    
+    flash(f'Usuario {usuario.email} eliminado correctamente', 'success')
     return redirect(url_for('admin.listar_usuarios'))
 
 @bp.route('/usuarios/<int:id>/hacer_admin', methods=['POST'])
