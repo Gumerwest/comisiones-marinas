@@ -91,17 +91,17 @@
                     <div class="comision-stats">
                         <div class="stat">
                             <i class="fas fa-users"></i>
-                            <span>{{ comision.membresias.filter_by(estado='aprobado').count() }}</span>
+                            <span>{{ comision.membresias.filter_by(estado='aprobado').all()|length }}</span>
                             <small>miembros</small>
                         </div>
                         <div class="stat">
                             <i class="fas fa-lightbulb"></i>
-                            <span>{{ comision.temas.filter_by(estado='aprobado').count() }}</span>
+                            <span>{{ comision.temas.filter_by(estado='aprobado').all()|length }}</span>
                             <small>temas</small>
                         </div>
                         <div class="stat">
                             <i class="fas fa-file"></i>
-                            <span>{{ comision.documentos.count() }}</span>
+                            <span>{{ comision.documentos.all()|length }}</span>
                             <small>docs</small>
                         </div>
                     </div>
@@ -119,9 +119,9 @@
                                 {{ membresia.usuario.nombre[0] }}{{ membresia.usuario.apellidos[0] }}
                             </div>
                             {% endfor %}
-                            {% if comision.membresias.filter_by(estado='aprobado').count() > 5 %}
+                            {% if comision.membresias.filter_by(estado='aprobado').all()|length > 5 %}
                             <div class="avatar more">
-                                +{{ comision.membresias.filter_by(estado='aprobado').count() - 5 }}
+                                +{{ comision.membresias.filter_by(estado='aprobado').all()|length - 5 }}
                             </div>
                             {% endif %}
                         </div>
