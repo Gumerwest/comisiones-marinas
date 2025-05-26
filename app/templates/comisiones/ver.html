@@ -289,10 +289,9 @@
                 {% endif %}
             </div>
             
-            {% set documentos = comision.documentos.order_by(comision.documentos.c.fecha_subida.desc()).all() %}
-            {% if documentos %}
+            {% if documentos_ordenados %}
                 <div class="row">
-                    {% for doc in documentos %}
+                    {% for doc in documentos_ordenados %}
                     <div class="col-md-6 mb-3">
                         <div class="documento-item">
                             <div class="documento-icon">
