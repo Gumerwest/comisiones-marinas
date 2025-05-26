@@ -246,17 +246,13 @@
                 <h5 class="mb-0">Participantes Activos</h5>
             </div>
             <div class="card-body">
-                {% set participantes = [] %}
-                {% for voto in tema.votos.limit(10).all() %}
-                    {% do participantes.append(voto.usuario) %}
-                {% endfor %}
-                
-                {% if participantes %}
+                <!-- AQUÍ ESTÁ LA CORRECCIÓN: Eliminamos el {% do %} -->
+                {% if tema.votos.count() > 0 %}
                 <div class="d-flex flex-wrap gap-2">
-                    {% for usuario in participantes %}
+                    {% for voto in tema.votos.limit(10).all() %}
                     <div class="member-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;" 
-                         title="{{ usuario.nombre }} {{ usuario.apellidos }}">
-                        {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
+                         title="{{ voto.usuario.nombre }} {{ voto.usuario.apellidos }}">
+                        {{ voto.usuario.nombre[0] }}{{ voto.usuario.apellidos[0] }}
                     </div>
                     {% endfor %}
                 </div>
