@@ -277,4 +277,10 @@
             <div class="alert alert-warning">
                 <i class="fas fa-lock me-2"></i> Debe ser miembro de la comisión para ver el contenido completo.
                 {% if not current_user.is_anonymous and not solicitud_pendiente %}
-                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="
+                    <a href="{{ url_for('comisiones.solicitar_membresia', id=comision.id) }}" class="alert-link">Solicite membresía aquí</a>.
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
