@@ -85,14 +85,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for usuario, membresia in miembros %}
+                    {% for usuario, membresia in lideres + coordinadores + miembros %}
                     <tr>
                         <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
                         <td>{{ usuario.email }}</td>
                         <td>{{ usuario.razon_social }}</td>
                         <td>{{ usuario.cargo }}</td>
                         <td>
-                            {% if membresia.rol == 'coordinador' %}
+                            {% if membresia.rol == 'lider' %}
+                                <span class="badge badge-leader">Líder de Comisión</span>
+                            {% elif membresia.rol == 'coordinador' %}
                                 <span class="badge bg-primary">Coordinador</span>
                             {% else %}
                                 <span class="badge bg-secondary">Miembro</span>
@@ -102,20 +104,47 @@
                         {% if current_user.rol == 'admin' or es_coordinador %}
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
-                                {% if membresia.rol != 'coordinador' and (current_user.rol == 'admin' or es_coordinador) %}
-                                    <form action="{{ url_for('comisiones.nombrar_coordinador', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-warning btn-sm" title="Nombrar Coordinador">
-                                            <i class="fas fa-crown"></i>
-                                        </button>
-                                    </form>
-                                {% elif membresia.rol == 'coordinador' and current_user.rol == 'admin' %}
-                                    <form action="{{ url_for('comisiones.quitar_coordinador', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-secondary btn-sm" title="Quitar Coordinador">
-                                            <i class="fas fa-user"></i>
-                                        </button>
-                                    </form>
+                                {% if current_user.rol == 'admin' %}
+                                    {% if membresia.rol != 'lider' %}
+                                        <form action="{{ url_for('comisiones.nombrar_lider_comision', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-warning btn-sm" title="Nombrar Líder de Comisión">
+                                                <i class="fas fa-crown"></i> Hacer Líder
+                                            </button>
+                                        </form>
+                                    {% elif membresia.rol == 'lider' %}
+                                        <form action="{{ url_for('comisiones.quitar_lider', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-secondary btn-sm" title="Quitar Líder">
+                                                <i class="fas fa-user"></i> Quitar Líder
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                    {% if membresia.rol != 'coordinador' and membresia.rol != 'lider' %}
+                                        <form action="{{ url_for('comisiones.nombrar_coordinador', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-primary btn-sm" title="Nombrar Coordinador">
+                                                <i class="fas fa-star"></i> Coordinador
+                                            </button>
+                                        </form>
+                                    {% elif membresia.rol == 'coordinador' %}
+                                        <form action="{{ url_for('comisiones.quitar_coordinador', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-secondary btn-sm" title="Quitar Coordinador">
+                                                <i class="fas fa-user"></i> Quitar Coord.
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                    {% if usuario.id != current_user.id %}
+                                        <form action="{{ url_for('comisiones.eliminar_miembro', comision_id=comision.id, usuario_id=usuario.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Eliminar de la comisión" data-confirm="¿Está seguro de que desea eliminar este miembro de la comisión?">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </td>
