@@ -3,451 +3,335 @@
 {% block tema_id %}{{ tema.id }}{% endblock %}
 
 {% block content %}
-<div class="fade-in-up">
-    <div class="row">
-        <div class="col-md-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('comisiones.listar_comisiones') }}">Comisiones</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=tema.comision_id) }}">{{ tema.comision.nombre }}</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">{{ tema.titulo }}</li>
-                </ol>
-            </nav>
-            
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h2 class="mb-3">{{ tema.titulo }}</h2>
-                            
-                            <!-- Información del líder del tema -->
-                            {% if tema.lider %}
-                            <div class="mb-3">
-                                <span class="badge badge-leader fs-6">
-                                    <i class="fas fa-star me-1"></i>Líder del Tema: {{ tema.lider.nombre }} {{ tema.lider.apellidos }}
+<div class="row">
+    <!-- Columna Principal -->
+    <div class="col-lg-8">
+        <!-- Información General del Tema -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb small">
+                        <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=tema.comision_id) }}">{{ tema.comision.nombre }}</a></li>
+                        <li class="breadcrumb-item active">{{ tema.titulo }}</li>
+                    </ol>
+                </nav>
+                
+                <h2 class="mb-3">{{ tema.titulo }}</h2>
+                
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <p class="lead">{{ tema.resumen }}</p>
+                        
+                        {% if tema.situacion_actual %}
+                        <h5 class="mt-3">Situación Actual</h5>
+                        <p>{{ tema.situacion_actual }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="mb-2">
+                                <span class="badge bg-primary fs-6">
+                                    <i class="fas fa-thumbs-up"></i> {{ tema.votos.count() }} votos
                                 </span>
                             </div>
-                            {% endif %}
+                            <form action="{{ url_for('temas.votar', id=tema.id) }}" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm {% if voto_usuario %}btn-success{% else %}btn-outline-primary{% endif %}">
+                                    <i class="fas fa-thumbs-up"></i> {% if voto_usuario %}Votado{% else %}Votar{% endif %}
+                                </button>
+                            </form>
                             
-                            <div class="mb-4">
-                                <h4><i class="fas fa-info-circle me-2 text-primary"></i>Resumen</h4>
-                                <p class="lead">{{ tema.resumen }}</p>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    Creado por<br>
+                                    <strong>{{ tema.creador.nombre }} {{ tema.creador.apellidos }}</strong><br>
+                                    {{ tema.fecha_creacion.strftime('%d/%m/%Y') }}
+                                </small>
                             </div>
-                            
-                            {% if tema.situacion_actual %}
-                            <div class="mb-4">
-                                <h4><i class="fas fa-chart-line me-2 text-info"></i>Situación Actual</h4>
-                                <p style="white-space: pre-line;">{{ tema.situacion_actual }}</p>
-                            </div>
-                            {% endif %}
-                            
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-4">
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <span class="badge bg-primary fs-6">
-                                        <i class="fas fa-thumbs-up me-1"></i>{{ tema.votos.count() }} votos
-                                    </span>
-                                    <span class="badge bg-info fs-6">
-                                        <i class="fas fa-comments me-1"></i>{{ comentarios|length }} comentarios
-                                    </span>
-                                    <span class="badge bg-secondary fs-6">
-                                        <i class="fas fa-calendar me-1"></i>{{ reuniones|length }} reuniones
-                                    </span>
-                                    <span class="badge bg-warning text-dark fs-6">
-                                        <i class="fas fa-file me-1"></i>{{ documentos|length }} documentos
-                                    </span>
-                                </div>
-                                
-                                <div class="d-flex gap-2">
-                                    <form action="{{ url_for('temas.votar', id=tema.id) }}" method="post" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn {% if voto_usuario %}btn-success{% else %}btn-outline-primary{% endif %}">
-                                            <i class="fas fa-thumbs-up me-1"></i>{% if voto_usuario %}Votado{% else %}Votar{% endif %}
-                                        </button>
-                                    </form>
-                                    
-                                    {% if current_user.rol == 'admin' %}
-                                    <div class="dropdown">
-                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-cog me-1"></i>Admin
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="{{ url_for('temas.editar_tema', id=tema.id) }}">
-                                                <i class="fas fa-edit me-2"></i>Editar Tema
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="{{ url_for('temas.gestionar_patrocinador', id=tema.id) }}">
-                                                <i class="fas fa-handshake me-2"></i>Gestionar Patrocinador
-                                            </a></li>
-                                            {% if not tema.lider %}
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><h6 class="dropdown-header">Nombrar Líder del Tema</h6></li>
-                                            {% set miembros_comision = tema.comision.membresias.filter_by(estado='aprobado').all() %}
-                                            {% for membresia in miembros_comision %}
-                                            <li>
-                                                <form action="{{ url_for('temas.nombrar_lider_tema', id=tema.id, usuario_id=membresia.usuario.id) }}" method="post">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="dropdown-item">
-                                                        <i class="fas fa-user me-2"></i>{{ membresia.usuario.nombre }} {{ membresia.usuario.apellidos }}
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            {% endfor %}
-                                            {% elif tema.lider %}
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                <form action="{{ url_for('temas.quitar_lider_tema', id=tema.id) }}" method="post">
-                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="dropdown-item text-warning">
-                                                        <i class="fas fa-user-times me-2"></i>Quitar Líder
-                                                    </button>
-                                                </form>
-                                            </li>
-                                            {% endif %}
-                                        </ul>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            {% if tema.patrocinador %}
-                            <div class="card mb-3 sponsor-card">
-                                <div class="card-header bg-warning text-dark">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-handshake me-2"></i>Patrocinador
-                                    </h5>
-                                </div>
-                                <div class="card-body text-center">
-                                    {% if tema.logo_patrocinador_path %}
-                                    <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="{{ tema.patrocinador }}" class="img-fluid mb-3" style="max-height: 100px;">
-                                    {% endif %}
-                                    <h5 class="fw-bold">{{ tema.patrocinador }}</h5>
-                                    {% if tema.enlace_patrocinador %}
-                                    <a href="{{ tema.enlace_patrocinador }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">
-                                        <i class="fas fa-external-link-alt me-1"></i>Visitar sitio web
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            {% if tema.solucion_patrocinador %}
-                            <div class="card sponsor-card">
-                                <div class="card-header bg-info text-white">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-lightbulb me-2"></i>Solución Propuesta
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <p style="white-space: pre-line;" class="mb-0">{{ tema.solucion_patrocinador }}</p>
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% else %}
-                            <div class="card">
-                                <div class="card-body text-center text-muted">
-                                    <i class="fas fa-handshake fa-3x mb-3 opacity-25"></i>
-                                    <p>Este tema aún no cuenta con patrocinador</p>
-                                    {% if current_user.rol == 'admin' or current_user.es_coordinador_de(tema.comision_id) %}
-                                    <a href="{{ url_for('temas.gestionar_patrocinador', id=tema.id) }}" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-plus me-1"></i>Añadir Patrocinador
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
-                <div class="card-footer text-muted">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small>
-                            <i class="fas fa-user me-1"></i>Creado por {{ tema.creador.nombre }} {{ tema.creador.apellidos }}
-                        </small>
-                        <small>
-                            <i class="fas fa-calendar-alt me-1"></i>{{ tema.fecha_creacion.strftime('%d/%m/%Y') }}
-                        </small>
-                    </div>
+                
+                {% if current_user.rol == 'admin' %}
+                <hr>
+                <div class="btn-group btn-group-sm">
+                    <a href="{{ url_for('temas.editar_tema', id=tema.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{{ url_for('temas.gestionar_patrocinador', id=tema.id) }}" class="btn btn-outline-warning">
+                        <i class="fas fa-handshake"></i> Patrocinador
+                    </a>
                 </div>
+                {% endif %}
             </div>
+        </div>
 
-            <ul class="nav nav-tabs mb-4" id="temaTab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="documentos-tab" data-bs-toggle="tab" data-bs-target="#documentos" type="button" role="tab">
-                        <i class="fas fa-folder-open me-2"></i>Documentos
-                        <span class="badge bg-secondary ms-1">{{ documentos|length }}</span>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab">
-                        <i class="fas fa-comments me-2"></i>Chat del Tema
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="comentarios-tab" data-bs-toggle="tab" data-bs-target="#comentarios" type="button" role="tab">
-                        <i class="fas fa-comment-dots me-2"></i>Comentarios
-                        <span class="badge bg-secondary ms-1">{{ comentarios|length }}</span>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="reuniones-tab" data-bs-toggle="tab" data-bs-target="#reuniones" type="button" role="tab">
-                        <i class="fas fa-calendar-alt me-2"></i>Reuniones
-                        <span class="badge bg-secondary ms-1">{{ reuniones|length }}</span>
-                    </button>
-                </li>
-            </ul>
-            
-            <div class="tab-content" id="temaTabContent">
-                <!-- Tab de Documentos -->
-                <div class="tab-pane fade show active" id="documentos" role="tabpanel">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Documentos del Tema</h3>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
-                            <i class="fas fa-upload me-2"></i>Subir Documento
+        <!-- Documentos y Reuniones -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Documentos</h5>
+                        <button type="button" class="btn btn-sm btn-primary" 
+                                data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
+                            <i class="fas fa-upload"></i>
                         </button>
                     </div>
-                    
-                    {% if documentos %}
-                    <div class="row">
-                        {% for documento in documentos %}
-                        <div class="col-md-6 mb-3">
-                            <div class="documento-item">
-                                <div class="documento-icon">
-                                    {% if documento.tipo in ['pdf'] %}
-                                    <i class="fas fa-file-pdf text-danger"></i>
-                                    {% elif documento.tipo in ['doc', 'docx'] %}
-                                    <i class="fas fa-file-word text-primary"></i>
-                                    {% elif documento.tipo in ['xls', 'xlsx'] %}
-                                    <i class="fas fa-file-excel text-success"></i>
-                                    {% elif documento.tipo in ['ppt', 'pptx'] %}
-                                    <i class="fas fa-file-powerpoint text-warning"></i>
-                                    {% elif documento.tipo in ['jpg', 'jpeg', 'png', 'gif'] %}
-                                    <i class="fas fa-file-image text-info"></i>
-                                    {% else %}
-                                    <i class="fas fa-file text-secondary"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="documento-info">
-                                    <h5 class="mb-1">{{ documento.nombre }}</h5>
-                                    {% if documento.descripcion %}
-                                    <p class="mb-1 text-muted">{{ documento.descripcion }}</p>
-                                    {% endif %}
-                                    <small class="text-muted">
-                                        <i class="fas fa-user me-1"></i>{{ documento.usuario.nombre }} {{ documento.usuario.apellidos }}
-                                        <i class="fas fa-calendar-alt mx-2"></i>{{ documento.fecha_subida.strftime('%d/%m/%Y') }}
-                                    </small>
-                                </div>
-                                <a href="{{ url_for('static', filename='uploads/' + documento.path) }}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                    <i class="fas fa-download me-1"></i>Descargar
-                                </a>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>No hay documentos disponibles para este tema.
-                    </div>
-                    {% endif %}
-                </div>
-                
-                <!-- Tab de Chat -->
-                <div class="tab-pane fade" id="chat" role="tabpanel">
-                    <h3 class="mb-3">Chat del Tema</h3>
-                    <div class="card">
-                        <div class="card-body" id="chat-messages" data-current-user-id="{{ current_user.id }}">
-                            <div class="text-center text-muted">
-                                <i class="fas fa-comments fa-3x mb-3 opacity-50"></i>
-                                <p>Los mensajes aparecerán aquí cuando los miembros comiencen a conversar sobre este tema.</p>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <form id="chat-form">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="chat-input" placeholder="Escribe un mensaje..." required>
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="fas fa-paper-plane me-1"></i>Enviar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tab de Comentarios -->
-                <div class="tab-pane fade" id="comentarios" role="tabpanel">
-                    <h3 class="mb-4">Comentarios del Tema</h3>
-                    
-                    <div class="card">
-                        <div class="card-body" style="max-height: 500px; overflow-y: auto;">
-                            {% if comentarios %}
-                            <div class="comentarios-container">
-                                {% for comentario in comentarios %}
-                                <div class="comentario {% if not comentario.lecturas.filter_by(usuario_id=current_user.id).first() %}comentario-nuevo{% endif %}" data-comentario-id="{{ comentario.id }}">
-                                    <div class="comentario-header">
-                                        <div class="d-flex align-items-center">
-                                            <div class="member-avatar me-2" style="width: 35px; height: 35px; font-size: 0.9rem;">
-                                                {{ comentario.usuario.nombre[0] }}{{ comentario.usuario.apellidos[0] }}
-                                            </div>
-                                            <div>
-                                                <strong>{{ comentario.usuario.nombre }} {{ comentario.usuario.apellidos }}</strong>
-                                                <small class="text-muted ms-2">{{ comentario.fecha.strftime('%d/%m/%Y %H:%M') }}</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="comentario-content mt-2">
-                                        {{ comentario.contenido }}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>No hay comentarios en este tema. ¡Sé el primero en comentar!
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="card-footer">
-                            <form action="{{ url_for('temas.comentar', id=tema.id) }}" method="post">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <div class="input-group">
-                                    <textarea class="form-control" name="contenido" placeholder="Escribe un comentario..." required rows="2"></textarea>
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="fas fa-paper-plane me-1"></i>Enviar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tab de Reuniones -->
-                <div class="tab-pane fade" id="reuniones" role="tabpanel">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3>Reuniones del Tema</h3>
-                        <a href="{{ url_for('temas.proponer_reunion', id=tema.id) }}" class="btn btn-primary">
-                            <i class="fas fa-calendar-plus me-2"></i>Proponer Reunión
-                        </a>
-                    </div>
-                    
-                    {% if reuniones %}
-                    <div class="row">
-                        {% for reunion in reuniones %}
-                        <div class="col-md-12 mb-3">
-                            <div class="reunion-item">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h5 class="mb-0">{{ reunion.titulo }}</h5>
-                                            <span class="badge {% if reunion.estado == 'aprobada' %}bg-success{% elif reunion.estado == 'pendiente_aprobacion' %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">
-                                                {% if reunion.estado == 'aprobada' %}
-                                                <i class="fas fa-check me-1"></i>Aprobada
-                                                {% elif reunion.estado == 'pendiente_aprobacion' %}
-                                                <i class="fas fa-clock me-1"></i>Pendiente
-                                                {% else %}
-                                                <i class="fas fa-times me-1"></i>Rechazada
-                                                {% endif %}
-                                            </span>
-                                        </div>
-                                        {% if reunion.descripcion %}
-                                        <p class="text-muted">{{ reunion.descripcion }}</p>
-                                        {% endif %}
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p class="mb-1 reunion-fecha">
-                                                    <i class="fas fa-calendar-alt me-2 text-primary"></i>{{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
-                                                </p>
-                                                {% if reunion.duracion %}
-                                                <p class="mb-1">
-                                                    <i class="fas fa-clock me-2 text-info"></i>{{ reunion.duracion }} minutos
-                                                </p>
-                                                {% endif %}
-                                                {% if reunion.lugar %}
-                                                <p class="mb-1">
-                                                    <i class="fas fa-map-marker-alt me-2 text-success"></i>{{ reunion.lugar }}
-                                                </p>
-                                                {% endif %}
-                                                {% if reunion.enlace_virtual %}
-                                                <p class="mb-1">
-                                                    <i class="fas fa-video me-2 text-warning"></i>
-                                                    <a href="{{ reunion.enlace_virtual }}" target="_blank" class="text-decoration-none">Reunión virtual</a>
-                                                </p>
-                                                {% endif %}
-                                            </div>
-                                            <div class="col-md-6 text-md-end">
-                                                <small class="text-muted">
-                                                    <i class="fas fa-user me-1"></i>Propuesta por {{ reunion.creador.nombre }} {{ reunion.creador.apellidos }}
-                                                </small>
-                                            </div>
-                                        </div>
-                                        
-                                        {% if reunion.estado == 'pendiente_aprobacion' and (current_user.rol == 'admin' or current_user.es_coordinador_de(tema.comision_id)) %}
-                                        <div class="mt-3 d-flex gap-2">
-                                            <form action="{{ url_for('temas.aprobar_reunion', id=reunion.id) }}" method="post" class="d-inline">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-success btn-sm">
-                                                    <i class="fas fa-check me-1"></i>Aprobar
-                                                </button>
-                                            </form>
-                                            <form action="{{ url_for('temas.rechazar_reunion', id=reunion.id) }}" method="post" class="d-inline">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-danger btn-sm">
-                                                    <i class="fas fa-times me-1"></i>Rechazar
-                                                </button>
-                                            </form>
-                                        </div>
-                                        {% endif %}
-                                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        {% if documentos %}
+                            {% for doc in documentos %}
+                            <div class="d-flex align-items-center mb-2 pb-2 border-bottom">
+                                <i class="fas fa-file-{{ 'pdf' if doc.tipo == 'pdf' else 'alt' }} me-2 text-primary"></i>
+                                <div class="flex-grow-1">
+                                    <a href="{{ url_for('static', filename='uploads/' + doc.path) }}" 
+                                       target="_blank" class="text-decoration-none">
+                                        {{ doc.nombre }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">{{ doc.usuario.nombre }} - {{ doc.fecha_subida.strftime('%d/%m') }}</small>
                                 </div>
                             </div>
-                        </div>
-                        {% endfor %}
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0">Sin documentos</p>
+                        {% endif %}
                     </div>
-                    {% else %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>No hay reuniones programadas para este tema.
-                    </div>
-                    {% endif %}
                 </div>
             </div>
             
-            <!-- Modal para subir documento -->
-            <div class="modal fade" id="subirDocumentoModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-upload me-2"></i>Subir Documento
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <form action="{{ url_for('temas.subir_documento', id=tema.id) }}" method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label for="nombre" class="form-label">Nombre del Documento</label>
-                                    <input type="text" class="form-control" id="nombre" name="nombre" required>
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Reuniones</h5>
+                        <a href="{{ url_for('temas.proponer_reunion', id=tema.id) }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-calendar-plus"></i>
+                        </a>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        {% if reuniones %}
+                            {% for reunion in reuniones|selectattr('estado', 'equalto', 'aprobada')|list %}
+                            <div class="mb-3 pb-2 border-bottom">
+                                <h6 class="mb-1">{{ reunion.titulo }}</h6>
+                                <p class="small mb-1">
+                                    <i class="fas fa-calendar text-primary"></i> {{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
+                                    {% if reunion.lugar %}
+                                        <br><i class="fas fa-map-marker-alt text-success"></i> {{ reunion.lugar }}
+                                    {% endif %}
+                                    {% if reunion.enlace_virtual %}
+                                        <br><a href="{{ reunion.enlace_virtual }}" target="_blank">
+                                            <i class="fas fa-video"></i> Reunión virtual
+                                        </a>
+                                    {% endif %}
+                                </p>
+                                
+                                {% if reunion.estado == 'pendiente_aprobacion' and current_user.rol == 'admin' %}
+                                <div class="btn-group btn-group-sm">
+                                    <form action="{{ url_for('temas.aprobar_reunion', id=reunion.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-success btn-sm">Aprobar</button>
+                                    </form>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="descripcion" class="form-label">Descripción</label>
-                                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3" placeholder="Descripción opcional del documento"></textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="documento" class="form-label">Archivo</label>
-                                    <input type="file" class="form-control" id="documento" name="documento" required>
-                                    <div class="form-text">Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, GIF</div>
-                                </div>
+                                {% endif %}
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-upload me-1"></i>Subir
-                                </button>
-                            </div>
-                        </form>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0">Sin reuniones programadas</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Chat del Tema -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments"></i> Conversación del Tema
+                    <small id="connection-status" class="float-end text-muted">○ Conectando...</small>
+                </h5>
+            </div>
+            <div class="card-body p-3">
+                <div id="chat-messages" data-current-user-id="{{ current_user.id }}" 
+                     style="height: 350px; overflow-y: auto;">
+                    <div class="text-center text-muted">
+                        <small>Cargando mensajes...</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <form id="chat-form">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="chat-input" 
+                               placeholder="Escribe tu mensaje..." required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-paper-plane"></i> Enviar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Lateral -->
+    <div class="col-lg-4">
+        <!-- Líder del Tema -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Líder del Tema</h5>
+            </div>
+            <div class="card-body">
+                {% if tema.lider %}
+                <div class="d-flex align-items-center">
+                    <div class="member-avatar me-3" style="width: 50px; height: 50px;">
+                        {{ tema.lider.nombre[0] }}{{ tema.lider.apellidos[0] }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ tema.lider.nombre }} {{ tema.lider.apellidos }}</h6>
+                        <small class="text-muted">{{ tema.lider.cargo }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted mb-2">Sin líder asignado</p>
+                {% if current_user.rol == 'admin' %}
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#asignarLiderModal">
+                    <i class="fas fa-crown"></i> Asignar Líder
+                </button>
+                {% endif %}
+                {% endif %}
+                
+                {% if tema.lider and current_user.rol == 'admin' %}
+                <hr>
+                <form action="{{ url_for('temas.quitar_lider_tema', id=tema.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-user-times"></i> Quitar Líder
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Patrocinador -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Patrocinador</h5>
+            </div>
+            <div class="card-body">
+                {% if tema.patrocinador %}
+                    {% if tema.logo_patrocinador_path %}
+                    <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" 
+                         alt="{{ tema.patrocinador }}" class="img-fluid mb-2">
+                    {% endif %}
+                    <h6>{{ tema.patrocinador }}</h6>
+                    {% if tema.enlace_patrocinador %}
+                    <a href="{{ tema.enlace_patrocinador }}" target="_blank" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-external-link-alt"></i> Visitar web
+                    </a>
+                    {% endif %}
+                    {% if tema.solucion_patrocinador %}
+                    <hr>
+                    <h6>Solución Propuesta:</h6>
+                    <p class="small">{{ tema.solucion_patrocinador }}</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted small mb-0">Sin patrocinador</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Miembros Participantes -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Participantes Activos</h5>
+            </div>
+            <div class="card-body">
+                {% set participantes = [] %}
+                {% for voto in tema.votos.limit(10).all() %}
+                    {% do participantes.append(voto.usuario) %}
+                {% endfor %}
+                
+                {% if participantes %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for usuario in participantes %}
+                    <div class="member-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;" 
+                         title="{{ usuario.nombre }} {{ usuario.apellidos }}">
+                        {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Sin participantes aún</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para asignar líder -->
+{% if current_user.rol == 'admin' and not tema.lider %}
+<div class="modal fade" id="asignarLiderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asignar Líder del Tema</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Seleccione un miembro de la comisión para liderar este tema:</p>
+                {% set miembros_comision = tema.comision.membresias.filter_by(estado='aprobado').all() %}
+                {% for membresia in miembros_comision %}
+                <form action="{{ url_for('temas.nombrar_lider_tema', id=tema.id, usuario_id=membresia.usuario.id) }}" 
+                      method="post" class="mb-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-primary w-100 text-start">
+                        <i class="fas fa-user me-2"></i>
+                        {{ membresia.usuario.nombre }} {{ membresia.usuario.apellidos }}
+                        {% if membresia.rol == 'coordinador' %}
+                            <span class="badge bg-primary float-end">Coordinador</span>
+                        {% elif membresia.rol == 'lider' %}
+                            <span class="badge bg-warning float-end">Líder Comisión</span>
+                        {% endif %}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para subir documento -->
+<div class="modal fade" id="subirDocumentoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Subir Documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('temas.subir_documento', id=tema.id) }}" 
+                  method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Documento</label>
+                        <input type="text" class="form-control" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Archivo</label>
+                        <input type="file" class="form-control" name="documento" required 
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Subir</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
