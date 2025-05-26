@@ -331,52 +331,42 @@
         <div class="tab-pane fade" id="reuniones">
             <h5 class="mb-4">Próximas Reuniones</h5>
             
-            {% set reuniones_proximas = namespace(items=[]) %}
-            {% for tema in temas %}
-                {% for reunion in tema.reuniones.filter_by(estado='aprobada').all() %}
-                    {% if reunion.fecha > now() %}
-                        {% set reuniones_proximas.items = reuniones_proximas.items + [reunion] %}
-                    {% endif %}
-                {% endfor %}
-            {% endfor %}
-            
-            {% if reuniones_proximas.items %}
-                <div class="row g-3">
-                    {% for reunion in reuniones_proximas.items|sort(attribute='fecha') %}
-                        {% if loop.index <= 6 %}
-                        <div class="col-md-6 col-lg-4">
-                            <div class="reunion-card">
-                                <div class="reunion-date">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    {{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
+            <!-- Simplificamos: mostramos todas las reuniones aprobadas de todos los temas -->
+            <div class="row g-3">
+                {% set reunion_count = namespace(value=0) %}
+                {% for tema in temas %}
+                    {% for reunion in tema.reuniones.filter_by(estado='aprobada').order_by('fecha').all() %}
+                        {% if reunion.fecha > now() and reunion_count.value < 6 %}
+                            {% set reunion_count.value = reunion_count.value + 1 %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="reunion-card">
+                                    <div class="reunion-date">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        {{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
+                                    </div>
+                                    <h6 class="reunion-title">{{ reunion.titulo }}</h6>
+                                    <p class="reunion-topic">
+                                        <i class="fas fa-lightbulb"></i> {{ reunion.tema.titulo|truncate(30) }}
+                                    </p>
+                                    {% if reunion.lugar %}
+                                    <p class="reunion-location">
+                                        <i class="fas fa-map-marker-alt"></i> {{ reunion.lugar }}
+                                    </p>
+                                    {% endif %}
+                                    {% if reunion.enlace_virtual %}
+                                    <a href="{{ reunion.enlace_virtual }}" target="_blank" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-video"></i> Unirse
+                                    </a>
+                                    {% endif %}
                                 </div>
-                                <h6 class="reunion-title">{{ reunion.titulo }}</h6>
-                                <p class="reunion-topic">
-                                    <i class="fas fa-lightbulb"></i> {{ reunion.tema.titulo|truncate(30) }}
-                                </p>
-                                {% if reunion.lugar %}
-                                <p class="reunion-location">
-                                    <i class="fas fa-map-marker-alt"></i> {{ reunion.lugar }}
-                                </p>
-                                {% endif %}
-                                {% if reunion.enlace_virtual %}
-                                <a href="{{ reunion.enlace_virtual }}" target="_blank" 
-                                   class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-video"></i> Unirse
-                                </a>
-                                {% endif %}
                             </div>
-                        </div>
                         {% endif %}
                     {% endfor %}
-                </div>
-                
-                {% if reuniones_proximas.items|length > 6 %}
-                <div class="text-center mt-4">
-                    <p class="text-muted">Y {{ reuniones_proximas.items|length - 6 }} reuniones más...</p>
-                </div>
-                {% endif %}
-            {% else %}
+                {% endfor %}
+            </div>
+            
+            {% if reunion_count.value == 0 %}
                 <div class="empty-state text-center py-5">
                     <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
                     <h4>No hay reuniones programadas</h4>
@@ -387,41 +377,36 @@
             <hr class="my-5">
             
             <h5 class="mb-4">Reuniones Pasadas</h5>
-            {% set reuniones_pasadas = namespace(items=[]) %}
-            {% for tema in temas %}
-                {% for reunion in tema.reuniones.filter_by(estado='aprobada').all() %}
-                    {% if reunion.fecha <= now() %}
-                        {% set reuniones_pasadas.items = reuniones_pasadas.items + [reunion] %}
-                    {% endif %}
-                {% endfor %}
-            {% endfor %}
-            
-            {% if reuniones_pasadas.items %}
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Título</th>
-                                <th>Tema</th>
-                                <th>Lugar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for reunion in reuniones_pasadas.items|sort(attribute='fecha', reverse=true) %}
-                                {% if loop.index <= 10 %}
-                                <tr>
-                                    <td>{{ reunion.fecha.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ reunion.titulo }}</td>
-                                    <td>{{ reunion.tema.titulo|truncate(30) }}</td>
-                                    <td>{{ reunion.lugar or 'Virtual' }}</td>
-                                </tr>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Título</th>
+                            <th>Tema</th>
+                            <th>Lugar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set past_count = namespace(value=0) %}
+                        {% for tema in temas %}
+                            {% for reunion in tema.reuniones.filter_by(estado='aprobada').order_by(tema.reuniones.c.fecha.desc()).all() %}
+                                {% if reunion.fecha <= now() and past_count.value < 10 %}
+                                    {% set past_count.value = past_count.value + 1 %}
+                                    <tr>
+                                        <td>{{ reunion.fecha.strftime('%d/%m/%Y') }}</td>
+                                        <td>{{ reunion.titulo }}</td>
+                                        <td>{{ reunion.tema.titulo|truncate(30) }}</td>
+                                        <td>{{ reunion.lugar or 'Virtual' }}</td>
+                                    </tr>
                                 {% endif %}
                             {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if past_count.value == 0 %}
                 <p class="text-muted text-center">No hay reuniones pasadas registradas.</p>
             {% endif %}
         </div>
