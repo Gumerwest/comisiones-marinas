@@ -27,7 +27,7 @@
                         <i class="fas fa-lightbulb"></i> {{ temas|length }} temas
                     </span>
                     <span class="badge bg-success">
-                        <i class="fas fa-file"></i> {{ comision.documentos.count() }} documentos
+                        <i class="fas fa-file"></i> {{ comision.documentos.all()|length }} documentos
                     </span>
                 </div>
             </div>
@@ -133,7 +133,7 @@
                                            class="text-decoration-none">{{ tema.titulo }}</a>
                                     </h5>
                                     <span class="badge bg-primary">
-                                        <i class="fas fa-thumbs-up"></i> {{ tema.votos.count() }}
+                                        <i class="fas fa-thumbs-up"></i> {{ tema.votos.all()|length }}
                                     </span>
                                 </div>
                                 
@@ -166,13 +166,13 @@
                             <div class="card-footer bg-transparent">
                                 <div class="d-flex justify-content-between">
                                     <small>
-                                        <i class="fas fa-comment"></i> {{ tema.comentarios.count() }} comentarios
+                                        <i class="fas fa-comment"></i> {{ tema.comentarios.all()|length }} comentarios
                                     </small>
                                     <small>
-                                        <i class="fas fa-file"></i> {{ tema.documentos.count() }} docs
+                                        <i class="fas fa-file"></i> {{ tema.documentos.all()|length }} docs
                                     </small>
                                     <small>
-                                        <i class="fas fa-calendar-check"></i> {{ tema.reuniones.filter_by(estado='aprobada').count() }} reuniones
+                                        <i class="fas fa-calendar-check"></i> {{ tema.reuniones.filter_by(estado='aprobada').all()|length }} reuniones
                                     </small>
                                 </div>
                             </div>
