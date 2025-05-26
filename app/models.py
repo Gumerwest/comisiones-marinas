@@ -54,9 +54,9 @@ class Usuario(UserMixin, db.Model):
     activo = db.Column(db.Boolean, default=False)
     rol = db.Column(db.String(20), default='usuario')  # usuario, admin
     
-    # Relaciones
+    # Relaciones - AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL
     membresias = db.relationship('MembresiaComision', back_populates='usuario', lazy='dynamic')
-    temas_creados = db.relationship('Tema', back_populates='creador', lazy='dynamic')
+    temas_creados = db.relationship('Tema', foreign_keys='Tema.creador_id', back_populates='creador', lazy='dynamic')
     temas_liderados = db.relationship('Tema', foreign_keys='Tema.lider_id', back_populates='lider', lazy='dynamic')
     comentarios = db.relationship('Comentario', back_populates='usuario', lazy='dynamic')
     documentos = db.relationship('Documento', back_populates='usuario', lazy='dynamic')
