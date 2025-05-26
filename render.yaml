@@ -3,7 +3,7 @@ services:
     name: comisiones-marinas
     runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python init_db.py && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 30"
+    startCommand: "python init_db.py && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 120"
     envVars:
       - key: FLASK_APP
         value: run.py
@@ -18,14 +18,17 @@ services:
       - key: ADMIN_EMAIL
         value: admin@comisionesmarinas.es
       - key: ADMIN_PASSWORD
-        value: ComisionesMar2024!
+        value: admin123
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: RENDER
         value: "true"
       - key: PYTHONPATH
         value: /opt/render/project/src
+      - key: WEB_CONCURRENCY
+        value: "1"
     plan: free
+    healthCheckPath: /health
 
 databases:
   - name: comisiones-db
