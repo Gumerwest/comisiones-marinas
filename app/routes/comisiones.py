@@ -37,18 +37,18 @@ def ver_comision(id):
         estado='aprobado'
     ).order_by(Tema.fecha_creacion.desc()).all()
     
-    # Obtener miembros de la comisión con sus roles
-    miembros_query = db.session.query(Usuario, MembresiaComision).join(
-        MembresiaComision, Usuario.id == MembresiaComision.usuario_id
+    # Obtener miembros de la comisión con sus roles - CORREGIDO
+    miembros_query = db.session.query(MembresiaComision, Usuario).join(
+        Usuario, MembresiaComision.usuario_id == Usuario.id
     ).filter(
         MembresiaComision.comision_id == comision.id,
         MembresiaComision.estado == 'aprobado'
     ).all()
     
-    # Organizar miembros por rol
-    lideres = [(u, m) for u, m in miembros_query if m.rol == 'lider']
-    coordinadores = [(u, m) for u, m in miembros_query if m.rol == 'coordinador']
-    miembros = [(u, m) for u, m in miembros_query if m.rol == 'miembro']
+    # Organizar miembros por rol - CORREGIDO
+    lideres = [(m.usuario, m) for m, u in miembros_query if m.rol == 'lider']
+    coordinadores = [(m.usuario, m) for m, u in miembros_query if m.rol == 'coordinador']
+    miembros = [(m.usuario, m) for m, u in miembros_query if m.rol == 'miembro']
     
     return render_template('comisiones/ver.html', 
                           title=comision.nombre,
@@ -194,28 +194,29 @@ def listar_miembros(id):
         flash('Debe ser miembro de la comisión para ver la lista completa de miembros', 'warning')
         return redirect(url_for('comisiones.ver_comision', id=comision.id))
     
-    # Obtener miembros aprobados con sus roles
-    miembros_query = db.session.query(Usuario, MembresiaComision).join(
-        MembresiaComision, Usuario.id == MembresiaComision.usuario_id
+    # Obtener miembros aprobados con sus roles - CORREGIDO
+    miembros_query = db.session.query(MembresiaComision, Usuario).join(
+        Usuario, MembresiaComision.usuario_id == Usuario.id
     ).filter(
         MembresiaComision.comision_id == comision.id,
         MembresiaComision.estado == 'aprobado'
     ).all()
     
-    # Organizar miembros por rol
-    lideres = [(u, m) for u, m in miembros_query if m.rol == 'lider']
-    coordinadores = [(u, m) for u, m in miembros_query if m.rol == 'coordinador']
-    miembros = [(u, m) for u, m in miembros_query if m.rol == 'miembro']
+    # Organizar miembros por rol - CORREGIDO
+    lideres = [(m.usuario, m) for m, u in miembros_query if m.rol == 'lider']
+    coordinadores = [(m.usuario, m) for m, u in miembros_query if m.rol == 'coordinador']
+    miembros = [(m.usuario, m) for m, u in miembros_query if m.rol == 'miembro']
     
     # Si es admin o coordinador, mostrar también solicitudes pendientes
     solicitudes = []
     if current_user.rol == 'admin' or current_user.es_coordinador_de(comision.id):
-        solicitudes = db.session.query(Usuario, MembresiaComision).join(
-            MembresiaComision, Usuario.id == MembresiaComision.usuario_id
+        solicitudes_query = db.session.query(MembresiaComision, Usuario).join(
+            Usuario, MembresiaComision.usuario_id == Usuario.id
         ).filter(
             MembresiaComision.comision_id == comision.id,
             MembresiaComision.estado == 'pendiente_aprobacion'
         ).all()
+        solicitudes = [(m.usuario, m) for m, u in solicitudes_query]
     
     return render_template('comisiones/miembros.html',
                           title=f'Miembros de {comision.nombre}',
