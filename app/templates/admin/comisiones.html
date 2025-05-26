@@ -35,12 +35,12 @@
                         <td>{{ comision.descripcion|truncate(50) }}</td>
                         <td>
                             <span class="badge bg-primary">
-                                {{ comision.membresias.filter_by(estado='aprobado').count() }}
+                                {{ comision.membresias.filter_by(estado='aprobado').all()|length }}
                             </span>
                         </td>
                         <td>
                             <span class="badge bg-info">
-                                {{ comision.temas.count() }}
+                                {{ comision.temas.all()|length }}
                             </span>
                         </td>
                         <td>{{ comision.fecha_creacion.strftime('%d/%m/%Y') }}</td>
