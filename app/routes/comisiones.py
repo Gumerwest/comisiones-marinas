@@ -84,41 +84,29 @@ def crear_comision():
                 descripcion=form.descripcion.data
             )
             
-            # Guardar imagen si se proporciona
+            # Manejo de imagen con soporte para Render
             if form.imagen.data:
                 try:
-                    # Asegurar que el directorio existe
-                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                    if upload_folder:
-                        os.makedirs(upload_folder, exist_ok=True)
-                    
                     filename = secure_filename(form.imagen.data.filename)
-                    # Generar nombre único para evitar colisiones
+                    # Generar nombre único
                     filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
                     
-                    # En Render, usar /tmp para archivos temporales
                     if os.environ.get('RENDER'):
-                        temp_path = f"/tmp/{filename}"
-                        form.imagen.data.save(temp_path)
-                        # Copiar al directorio de uploads si es posible
-                        if upload_folder and os.path.exists(upload_folder):
-                            final_path = os.path.join(upload_folder, filename)
-                            import shutil
-                            shutil.copy2(temp_path, final_path)
-                            os.remove(temp_path)
-                        else:
-                            # Si no podemos guardar en uploads, no guardar la imagen
-                            filename = None
+                        # En Render, no guardamos imágenes
+                        print("En Render: Saltando guardado de imagen")
+                        # Opcionalmente, podrías subir a un servicio externo como S3
+                        # Por ahora, simplemente no guardamos la imagen
+                        pass
                     else:
                         # En desarrollo local
-                        filepath = os.path.join(upload_folder, filename)
-                        form.imagen.data.save(filepath)
-                    
-                    if filename:
-                        comision.imagen_path = filename
+                        upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                        if upload_folder:
+                            os.makedirs(upload_folder, exist_ok=True)
+                            filepath = os.path.join(upload_folder, filename)
+                            form.imagen.data.save(filepath)
+                            comision.imagen_path = filename
                 except Exception as e:
-                    print(f"Error guardando imagen: {str(e)}")
-                    # Continuar sin imagen
+                    print(f"Error con imagen: {str(e)}")
                     flash('La imagen no pudo ser guardada, pero la comisión se creará sin imagen', 'warning')
             
             db.session.add(comision)
@@ -140,7 +128,7 @@ def crear_comision():
         except Exception as e:
             db.session.rollback()
             print(f"Error creando comisión: {str(e)}")
-            flash('Error al crear la comisión. Por favor, inténtelo de nuevo.', 'danger')
+            flash(f'Error al crear la comisión: {str(e)}', 'danger')
             return redirect(url_for('comisiones.crear_comision'))
     
     return render_template('comisiones/crear.html', title='Crear Comisión', form=form)
@@ -200,22 +188,18 @@ def editar_comision(id):
             # Actualizar imagen si se proporciona una nueva
             if form.imagen.data:
                 try:
-                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                    if upload_folder:
-                        os.makedirs(upload_folder, exist_ok=True)
-                    
                     filename = secure_filename(form.imagen.data.filename)
                     filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
                     
-                    # Manejo similar para Render
                     if os.environ.get('RENDER'):
-                        temp_path = f"/tmp/{filename}"
-                        form.imagen.data.save(temp_path)
-                        if upload_folder and os.path.exists(upload_folder):
-                            final_path = os.path.join(upload_folder, filename)
-                            import shutil
-                            shutil.copy2(temp_path, final_path)
-                            os.remove(temp_path)
+                        # En Render, no actualizamos imágenes
+                        print("En Render: Saltando actualización de imagen")
+                    else:
+                        upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                        if upload_folder:
+                            os.makedirs(upload_folder, exist_ok=True)
+                            filepath = os.path.join(upload_folder, filename)
+                            form.imagen.data.save(filepath)
                             
                             # Eliminar imagen anterior si existe
                             if comision.imagen_path:
@@ -227,18 +211,6 @@ def editar_comision(id):
                                     pass
                             
                             comision.imagen_path = filename
-                    else:
-                        filepath = os.path.join(upload_folder, filename)
-                        form.imagen.data.save(filepath)
-                        
-                        # Eliminar imagen anterior si existe
-                        if comision.imagen_path:
-                            try:
-                                os.remove(os.path.join(upload_folder, comision.imagen_path))
-                            except:
-                                pass
-                        
-                        comision.imagen_path = filename
                 except Exception as e:
                     print(f"Error actualizando imagen: {str(e)}")
                     flash('La imagen no pudo ser actualizada', 'warning')
@@ -489,7 +461,12 @@ def subir_documento(id):
     form = DocumentoComisionForm()
     if form.validate_on_submit():
         try:
-            # Guardar archivo
+            if os.environ.get('RENDER'):
+                # En Render, no guardamos archivos
+                flash('La carga de archivos no está disponible en la versión de demostración', 'info')
+                return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
+            
+            # Guardar archivo (solo en desarrollo local)
             file = form.documento.data
             filename = secure_filename(file.filename)
             filename = f"comision_{comision.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
@@ -497,50 +474,27 @@ def subir_documento(id):
             upload_folder = current_app.config.get('UPLOAD_FOLDER')
             if upload_folder:
                 os.makedirs(upload_folder, exist_ok=True)
-            
-            # Manejo similar para Render
-            if os.environ.get('RENDER'):
-                temp_path = f"/tmp/{filename}"
-                file.save(temp_path)
-                if upload_folder and os.path.exists(upload_folder):
-                    final_path = os.path.join(upload_folder, filename)
-                    import shutil
-                    shutil.copy2(temp_path, final_path)
-                    os.remove(temp_path)
-                else:
-                    flash('No se pudo guardar el documento', 'warning')
-                    return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
-            else:
                 filepath = os.path.join(upload_folder, filename)
                 file.save(filepath)
-            
-            # Determinar tipo de archivo
-            extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-            
-            documento = DocumentoComision(
-                nombre=form.nombre.data,
-                descripcion=form.descripcion.data,
-                path=filename,
-                tipo=extension,
-                comision_id=comision.id,
-                usuario_id=current_user.id
-            )
-            db.session.add(documento)
-            db.session.commit()
-            
-            # Notificar a los miembros
-            try:
-                from app.utils.email import notify_members_of_commission
-                notify_members_of_commission(comision.id, 'nuevo_documento', {
-                    'comision_nombre': comision.nombre,
-                    'documento_nombre': documento.nombre,
-                    'documento_descripcion': documento.descripcion,
-                    'documento_autor': f"{current_user.nombre} {current_user.apellidos}"
-                })
-            except:
-                pass
-            
-            flash('Documento subido correctamente', 'success')
+                
+                # Determinar tipo de archivo
+                extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                
+                documento = DocumentoComision(
+                    nombre=form.nombre.data,
+                    descripcion=form.descripcion.data,
+                    path=filename,
+                    tipo=extension,
+                    comision_id=comision.id,
+                    usuario_id=current_user.id
+                )
+                db.session.add(documento)
+                db.session.commit()
+                
+                flash('Documento subido correctamente', 'success')
+            else:
+                flash('Error en la configuración del servidor', 'danger')
+                
         except Exception as e:
             db.session.rollback()
             print(f"Error subiendo documento: {str(e)}")
