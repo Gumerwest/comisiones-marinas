@@ -31,16 +31,16 @@ window.chatManager = {
         console.log("Uniéndose a comisión:", id);
         currentComisionId = id;
         currentTemaId = null;
-        socket.emit('join_comision', { comision_id: id });
-        socket.emit('get_messages_comision', { comision_id: id });
+        socket.emit('join_comision', { comision_id: parseInt(id) });
+        socket.emit('get_messages_comision', { comision_id: parseInt(id) });
     },
     
     joinTema: function(id) {
         console.log("Uniéndose a tema:", id);
         currentTemaId = id;
         currentComisionId = null;
-        socket.emit('join_tema', { tema_id: id });
-        socket.emit('get_messages_tema', { tema_id: id });
+        socket.emit('join_tema', { tema_id: parseInt(id) });
+        socket.emit('get_messages_tema', { tema_id: parseInt(id) });
     },
     
     setupEventListeners: function() {
@@ -105,7 +105,7 @@ window.chatManager = {
     
     sendMessage: function() {
         const input = document.getElementById('chat-input');
-        if (!input || !socket.connected) {
+        if (!input || !socket || !socket.connected) {
             console.log('No conectado o input no encontrado');
             return;
         }
@@ -117,12 +117,12 @@ window.chatManager = {
         
         if (currentComisionId) {
             socket.emit('send_message_comision', {
-                comision_id: currentComisionId,
+                comision_id: parseInt(currentComisionId),
                 mensaje: mensaje
             });
         } else if (currentTemaId) {
             socket.emit('send_message_tema', {
-                tema_id: currentTemaId,
+                tema_id: parseInt(currentTemaId),
                 mensaje: mensaje
             });
         }
