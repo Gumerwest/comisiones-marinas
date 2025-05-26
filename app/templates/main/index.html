@@ -1,453 +1,334 @@
 {% extends 'base.html' %}
 
+{% block tema_id %}{{ tema.id }}{% endblock %}
+
 {% block content %}
-<div class="home-container">
-    <!-- Hero Section Mejorado -->
-    <section class="hero-section">
-        <div class="hero-content">
-            <div class="container">
-                <div class="row align-items-center min-vh-50">
-                    <div class="col-lg-6">
-                        <h1 class="display-4 fw-bold mb-4">
-                            Comisiones de Trabajo<br>
-                            <span class="text-primary">Marinas de España</span>
-                        </h1>
-                        <p class="lead mb-4">
-                            Espacio colaborativo para profesionales del sector marítimo español. 
-                            Únete a las comisiones especializadas y participa en el desarrollo del sector.
-                        </p>
-                        <div class="d-flex gap-3 flex-wrap">
-                            {% if current_user.is_authenticated %}
-                                <a href="{{ url_for('comisiones.listar_comisiones') }}" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-ship me-2"></i>Ver Comisiones
-                                </a>
-                            {% else %}
-                                <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-user-plus me-2"></i>Únete Ahora
-                                </a>
-                                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
-                                    <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="hero-image">
-                            <img src="{{ url_for('static', filename='img/header.png') }}" 
-                                 alt="Marinas de España" class="img-fluid rounded shadow-lg"
-                                 onerror="this.style.display='none'">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Estadísticas -->
-    <section class="stats-section py-5 bg-light">
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-md-3 col-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-ship"></i>
-                        </div>
-                        <h3 class="stat-number">{{ comisiones|length }}</h3>
-                        <p class="stat-label">Comisiones Activas</p>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <h3 class="stat-number">{{ comisiones|sum(attribute='membresias.filter_by(estado="aprobado").count()') }}</h3>
-                        <p class="stat-label">Profesionales</p>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-lightbulb"></i>
-                        </div>
-                        <h3 class="stat-number">{{ comisiones|sum(attribute='temas.filter_by(estado="aprobado").count()') }}</h3>
-                        <p class="stat-label">Temas Activos</p>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-4">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-handshake"></i>
-                        </div>
-                        <h3 class="stat-number">12+</h3>
-                        <p class="stat-label">Colaboradores</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Comisiones Grid Mejorado -->
-    <section class="comisiones-section py-5">
-        <div class="container">
-            <div class="section-header text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Comisiones de Trabajo</h2>
-                <p class="lead text-muted">
-                    Únete a grupos especializados y contribuye al desarrollo del sector marítimo
-                </p>
-            </div>
-
-            {% if comisiones %}
-            <div class="row g-4">
-                {% for comision in comisiones %}
-                <div class="col-lg-4 col-md-6">
-                    <div class="comision-card h-100">
-                        {% if comision.imagen_path %}
-                        <div class="comision-image">
-                            <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" 
-                                 alt="{{ comision.nombre }}">
-                        </div>
-                        {% else %}
-                        <div class="comision-image placeholder">
-                            <i class="fas fa-ship fa-3x"></i>
-                        </div>
-                        {% endif %}
+<div class="row">
+    <!-- Columna Principal -->
+    <div class="col-lg-8">
+        <!-- Información General del Tema -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb small">
+                        <li class="breadcrumb-item"><a href="{{ url_for('comisiones.ver_comision', id=tema.comision_id) }}">{{ tema.comision.nombre }}</a></li>
+                        <li class="breadcrumb-item active">{{ tema.titulo }}</li>
+                    </ol>
+                </nav>
+                
+                <h2 class="mb-3">{{ tema.titulo }}</h2>
+                
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <p class="lead">{{ tema.resumen }}</p>
                         
-                        <div class="comision-content">
-                            <h4 class="comision-title">{{ comision.nombre }}</h4>
-                            <p class="comision-description">{{ comision.descripcion|truncate(120) }}</p>
+                        {% if tema.situacion_actual %}
+                        <h5 class="mt-3">Situación Actual</h5>
+                        <p>{{ tema.situacion_actual }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="mb-2">
+                                <span class="badge bg-primary fs-6">
+                                    <i class="fas fa-thumbs-up"></i> {{ tema.votos.all()|length }} votos
+                                </span>
+                            </div>
+                            <form action="{{ url_for('temas.votar', id=tema.id) }}" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm {% if voto_usuario %}btn-success{% else %}btn-outline-primary{% endif %}">
+                                    <i class="fas fa-thumbs-up"></i> {% if voto_usuario %}Votado{% else %}Votar{% endif %}
+                                </button>
+                            </form>
                             
-                            <div class="comision-stats">
-                                <div class="stat">
-                                    <i class="fas fa-users"></i>
-                                    <span>{{ comision.membresias.filter_by(estado='aprobado').count() }} miembros</span>
-                                </div>
-                                <div class="stat">
-                                    <i class="fas fa-lightbulb"></i>
-                                    <span>{{ comision.temas.filter_by(estado='aprobado').count() }} temas</span>
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    Creado por<br>
+                                    <strong>{{ tema.creador.nombre }} {{ tema.creador.apellidos }}</strong><br>
+                                    {{ tema.fecha_creacion.strftime('%d/%m/%Y') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if current_user.rol == 'admin' %}
+                <hr>
+                <div class="btn-group btn-group-sm">
+                    <a href="{{ url_for('temas.editar_tema', id=tema.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{{ url_for('temas.gestionar_patrocinador', id=tema.id) }}" class="btn btn-outline-warning">
+                        <i class="fas fa-handshake"></i> Patrocinador
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Documentos y Reuniones -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Documentos</h5>
+                        <button type="button" class="btn btn-sm btn-primary" 
+                                data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
+                            <i class="fas fa-upload"></i>
+                        </button>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        {% if documentos %}
+                            {% for doc in documentos %}
+                            <div class="d-flex align-items-center mb-2 pb-2 border-bottom">
+                                <i class="fas fa-file-{{ 'pdf' if doc.tipo == 'pdf' else 'alt' }} me-2 text-primary"></i>
+                                <div class="flex-grow-1">
+                                    <a href="{{ url_for('static', filename='uploads/' + doc.path) }}" 
+                                       target="_blank" class="text-decoration-none">
+                                        {{ doc.nombre }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">{{ doc.usuario.nombre }} - {{ doc.fecha_subida.strftime('%d/%m') }}</small>
                                 </div>
                             </div>
-                            
-                            {% if current_user.is_authenticated %}
-                                {% set es_miembro = current_user.es_miembro_de(comision.id) %}
-                                <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" 
-                                   class="btn btn-primary w-100 mt-3">
-                                    {% if es_miembro %}
-                                        <i class="fas fa-arrow-right me-1"></i>Acceder
-                                    {% else %}
-                                        <i class="fas fa-eye me-1"></i>Ver más
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0">Sin documentos</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Reuniones</h5>
+                        <a href="{{ url_for('temas.proponer_reunion', id=tema.id) }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-calendar-plus"></i>
+                        </a>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        {% if reuniones %}
+                            {% for reunion in reuniones|selectattr('estado', 'equalto', 'aprobada')|list %}
+                            <div class="mb-3 pb-2 border-bottom">
+                                <h6 class="mb-1">{{ reunion.titulo }}</h6>
+                                <p class="small mb-1">
+                                    <i class="fas fa-calendar text-primary"></i> {{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
+                                    {% if reunion.lugar %}
+                                        <br><i class="fas fa-map-marker-alt text-success"></i> {{ reunion.lugar }}
                                     {% endif %}
-                                </a>
-                            {% else %}
-                                <a href="{{ url_for('auth.login') }}" 
-                                   class="btn btn-outline-primary w-100 mt-3">
-                                    <i class="fas fa-lock me-1"></i>Iniciar sesión
-                                </a>
-                            {% endif %}
-                        </div>
+                                    {% if reunion.enlace_virtual %}
+                                        <br><a href="{{ reunion.enlace_virtual }}" target="_blank">
+                                            <i class="fas fa-video"></i> Reunión virtual
+                                        </a>
+                                    {% endif %}
+                                </p>
+                                
+                                {% if reunion.estado == 'pendiente_aprobacion' and current_user.rol == 'admin' %}
+                                <div class="btn-group btn-group-sm">
+                                    <form action="{{ url_for('temas.aprobar_reunion', id=reunion.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-success btn-sm">Aprobar</button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small mb-0">Sin reuniones programadas</p>
+                        {% endif %}
                     </div>
                 </div>
-                {% endfor %}
             </div>
-            
-            {% if current_user.is_authenticated %}
-            <div class="text-center mt-5">
-                <a href="{{ url_for('comisiones.listar_comisiones') }}" class="btn btn-outline-primary btn-lg">
-                    <i class="fas fa-th me-2"></i>Ver todas las comisiones
-                </a>
-            </div>
-            {% endif %}
-            {% else %}
-            <div class="empty-state">
-                <i class="fas fa-ship fa-4x text-muted mb-4"></i>
-                <h3>No hay comisiones activas</h3>
-                <p class="text-muted">Las comisiones se mostrarán aquí cuando estén disponibles.</p>
-            </div>
-            {% endif %}
         </div>
-    </section>
 
-    <!-- Características -->
-    <section class="features-section py-5 bg-light">
-        <div class="container">
-            <div class="section-header text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">¿Por qué unirse?</h2>
-                <p class="lead text-muted">
-                    Herramientas diseñadas para facilitar la colaboración profesional
-                </p>
+        <!-- Chat del Tema -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-comments"></i> Conversación del Tema
+                    <small id="connection-status" class="float-end text-muted">○ Conectando...</small>
+                </h5>
             </div>
-            
-            <div class="row g-4">
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card text-center">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-comments fa-3x"></i>
-                        </div>
-                        <h5>Chat en Tiempo Real</h5>
-                        <p class="text-muted">Comunicación instantánea con otros profesionales del sector</p>
+            <div class="card-body p-3">
+                <div id="chat-messages" data-current-user-id="{{ current_user.id }}" 
+                     style="height: 350px; overflow-y: auto;">
+                    <div class="text-center text-muted">
+                        <small>Cargando mensajes...</small>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card text-center">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-file-upload fa-3x"></i>
-                        </div>
-                        <h5>Gestión Documental</h5>
-                        <p class="text-muted">Comparte y organiza documentación relevante de forma segura</p>
+            </div>
+            <div class="card-footer">
+                <form id="chat-form">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="chat-input" 
+                               placeholder="Escribe tu mensaje..." required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-paper-plane"></i> Enviar
+                        </button>
                     </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card text-center">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-calendar fa-3x"></i>
-                        </div>
-                        <h5>Reuniones Coordinadas</h5>
-                        <p class="text-muted">Programa y gestiona encuentros presenciales y virtuales</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card text-center">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-vote-yea fa-3x"></i>
-                        </div>
-                        <h5>Sistema de Votación</h5>
-                        <p class="text-muted">Prioriza temas según su relevancia e interés común</p>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
-    </section>
+    </div>
 
-    {% if current_user.is_anonymous %}
-    <!-- Call to Action -->
-    <section class="cta-section py-5">
-        <div class="container">
-            <div class="cta-content text-center">
-                <h2 class="display-5 fw-bold mb-3">¿Listo para colaborar?</h2>
-                <p class="lead mb-4">
-                    Únete a la comunidad de profesionales del sector marítimo más importante de España
-                </p>
-                <div class="d-flex gap-3 justify-content-center flex-wrap">
-                    <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-user-plus me-2"></i>Crear cuenta gratuita
-                    </a>
-                    <a href="{{ url_for('main.acerca') }}" class="btn btn-outline-secondary btn-lg">
-                        <i class="fas fa-info-circle me-2"></i>Más información
-                    </a>
+    <!-- Columna Lateral -->
+    <div class="col-lg-4">
+        <!-- Líder del Tema -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Líder del Tema</h5>
+            </div>
+            <div class="card-body">
+                {% if tema.lider %}
+                <div class="d-flex align-items-center">
+                    <div class="member-avatar me-3" style="width: 50px; height: 50px;">
+                        {{ tema.lider.nombre[0] }}{{ tema.lider.apellidos[0] }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0">{{ tema.lider.nombre }} {{ tema.lider.apellidos }}</h6>
+                        <small class="text-muted">{{ tema.lider.cargo }}</small>
+                    </div>
                 </div>
+                {% else %}
+                <p class="text-muted mb-2">Sin líder asignado</p>
+                {% if current_user.rol == 'admin' %}
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#asignarLiderModal">
+                    <i class="fas fa-crown"></i> Asignar Líder
+                </button>
+                {% endif %}
+                {% endif %}
+                
+                {% if tema.lider and current_user.rol == 'admin' %}
+                <hr>
+                <form action="{{ url_for('temas.quitar_lider_tema', id=tema.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-user-times"></i> Quitar Líder
+                    </button>
+                </form>
+                {% endif %}
             </div>
         </div>
-    </section>
-    {% endif %}
+
+        <!-- Patrocinador -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Patrocinador</h5>
+            </div>
+            <div class="card-body">
+                {% if tema.patrocinador %}
+                    {% if tema.logo_patrocinador_path %}
+                    <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" 
+                         alt="{{ tema.patrocinador }}" class="img-fluid mb-2">
+                    {% endif %}
+                    <h6>{{ tema.patrocinador }}</h6>
+                    {% if tema.enlace_patrocinador %}
+                    <a href="{{ tema.enlace_patrocinador }}" target="_blank" class="btn btn-sm btn-outline-info">
+                        <i class="fas fa-external-link-alt"></i> Visitar web
+                    </a>
+                    {% endif %}
+                    {% if tema.solucion_patrocinador %}
+                    <hr>
+                    <h6>Solución Propuesta:</h6>
+                    <p class="small">{{ tema.solucion_patrocinador }}</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted small mb-0">Sin patrocinador</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Miembros Participantes -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Participantes Activos</h5>
+            </div>
+            <div class="card-body">
+                {% set votos_list = tema.votos.limit(10).all() %}
+                {% if votos_list|length > 0 %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for voto in votos_list %}
+                    <div class="member-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;" 
+                         title="{{ voto.usuario.nombre }} {{ voto.usuario.apellidos }}">
+                        {{ voto.usuario.nombre[0] }}{{ voto.usuario.apellidos[0] }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Sin participantes aún</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Estilos mejorados inspirados en el diseño de referencia -->
-<style>
-/* Reset y variables */
-:root {
-    --primary: #3b82f6;
-    --primary-dark: #2563eb;
-    --secondary: #64748b;
-    --border-color: #e5e7eb;
-    --bg-light: #f8fafc;
-    --text-muted: #6b7280;
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
+<!-- Modal para asignar líder -->
+{% if current_user.rol == 'admin' and not tema.lider %}
+<div class="modal fade" id="asignarLiderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Asignar Líder del Tema</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Seleccione un miembro de la comisión para liderar este tema:</p>
+                {% set miembros_comision = tema.comision.membresias.filter_by(estado='aprobado').all() %}
+                {% for membresia in miembros_comision %}
+                <form action="{{ url_for('temas.nombrar_lider_tema', id=tema.id, usuario_id=membresia.usuario.id) }}" 
+                      method="post" class="mb-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-primary w-100 text-start">
+                        <i class="fas fa-user me-2"></i>
+                        {{ membresia.usuario.nombre }} {{ membresia.usuario.apellidos }}
+                        {% if membresia.rol == 'coordinador' %}
+                            <span class="badge bg-primary float-end">Coordinador</span>
+                        {% elif membresia.rol == 'lider' %}
+                            <span class="badge bg-warning float-end">Líder Comisión</span>
+                        {% endif %}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
-/* Hero Section */
-.hero-section {
-    padding: 5rem 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-.hero-content h1 {
-    color: #1a202c;
-    line-height: 1.2;
-}
-
-.hero-image {
-    position: relative;
-    animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-}
-
-/* Estadísticas */
-.stat-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-md);
-}
-
-.stat-icon {
-    width: 60px;
-    height: 60px;
-    background: var(--bg-light);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    color: var(--primary);
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1a202c;
-    margin-bottom: 0.5rem;
-}
-
-.stat-label {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    margin: 0;
-}
-
-/* Tarjetas de Comisión */
-.comision-card {
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
-    border: 1px solid var(--border-color);
-}
-
-.comision-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary);
-}
-
-.comision-image {
-    height: 200px;
-    overflow: hidden;
-    position: relative;
-}
-
-.comision-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.comision-card:hover .comision-image img {
-    transform: scale(1.05);
-}
-
-.comision-image.placeholder {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-}
-
-.comision-content {
-    padding: 1.5rem;
-}
-
-.comision-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: #1a202c;
-}
-
-.comision-description {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-}
-
-.comision-stats {
-    display: flex;
-    gap: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.comision-stats .stat {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--secondary);
-}
-
-/* Features */
-.feature-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    height: 100%;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary);
-}
-
-.feature-icon {
-    color: var(--primary);
-}
-
-/* CTA Section */
-.cta-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.cta-content h2, .cta-content p {
-    color: white;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 5rem 0;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .hero-section {
-        padding: 3rem 0;
-    }
-    
-    .display-4 {
-        font-size: 2.5rem;
-    }
-    
-    .stat-card {
-        padding: 1.5rem;
-    }
-}
-
-/* Utilidades */
-.min-vh-50 {
-    min-height: 50vh;
-}
-
-.section-header {
-    margin-bottom: 3rem;
-}
-</style>
+<!-- Modal para subir documento -->
+<div class="modal fade" id="subirDocumentoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Subir Documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('temas.subir_documento', id=tema.id) }}" 
+                  method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Documento</label>
+                        <input type="text" class="form-control" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Archivo</label>
+                        <input type="file" class="form-control" name="documento" required 
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.gif">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Subir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
