@@ -31,7 +31,7 @@
                         <div class="text-center">
                             <div class="mb-2">
                                 <span class="badge bg-primary fs-6">
-                                    <i class="fas fa-thumbs-up"></i> {{ tema.votos.count() }} votos
+                                    <i class="fas fa-thumbs-up"></i> {{ tema.votos.all()|length }} votos
                                 </span>
                             </div>
                             <form action="{{ url_for('temas.votar', id=tema.id) }}" method="post">
@@ -246,10 +246,10 @@
                 <h5 class="mb-0">Participantes Activos</h5>
             </div>
             <div class="card-body">
-                <!-- AQUÍ ESTÁ LA CORRECCIÓN: Eliminamos el {% do %} -->
-                {% if tema.votos.count() > 0 %}
+                {% set votos_list = tema.votos.limit(10).all() %}
+                {% if votos_list|length > 0 %}
                 <div class="d-flex flex-wrap gap-2">
-                    {% for voto in tema.votos.limit(10).all() %}
+                    {% for voto in votos_list %}
                     <div class="member-avatar" style="width: 35px; height: 35px; font-size: 0.8rem;" 
                          title="{{ voto.usuario.nombre }} {{ voto.usuario.apellidos }}">
                         {{ voto.usuario.nombre[0] }}{{ voto.usuario.apellidos[0] }}
