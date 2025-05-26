@@ -37,7 +37,7 @@ def ver_comision(id):
         estado='aprobado'
     ).order_by(Tema.fecha_creacion.desc()).all()
     
-    # Obtener miembros de la comisión con sus roles - CORREGIDO
+    # Obtener miembros de la comisión con sus roles
     miembros_query = db.session.query(MembresiaComision, Usuario).join(
         Usuario, MembresiaComision.usuario_id == Usuario.id
     ).filter(
@@ -45,10 +45,14 @@ def ver_comision(id):
         MembresiaComision.estado == 'aprobado'
     ).all()
     
-    # Organizar miembros por rol - CORREGIDO
+    # Organizar miembros por rol
     lideres = [(m.usuario, m) for m, u in miembros_query if m.rol == 'lider']
     coordinadores = [(m.usuario, m) for m, u in miembros_query if m.rol == 'coordinador']
     miembros = [(m.usuario, m) for m, u in miembros_query if m.rol == 'miembro']
+    
+    # Añadir función now para las plantillas
+    from datetime import datetime as dt
+    now = dt.utcnow
     
     return render_template('comisiones/ver.html', 
                           title=comision.nombre,
@@ -61,7 +65,8 @@ def ver_comision(id):
                           lideres=lideres,
                           coordinadores=coordinadores,
                           miembros=miembros,
-                          total_miembros=len(miembros_query))
+                          total_miembros=len(miembros_query),
+                          now=now)
 
 @bp.route('/crear', methods=['GET', 'POST'])
 @login_required
@@ -73,35 +78,70 @@ def crear_comision():
     
     form = ComisionForm()
     if form.validate_on_submit():
-        comision = Comision(
-            nombre=form.nombre.data,
-            descripcion=form.descripcion.data
-        )
-        
-        # Guardar imagen si se proporciona
-        if form.imagen.data:
-            filename = secure_filename(form.imagen.data.filename)
-            # Generar nombre único para evitar colisiones
-            filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            form.imagen.data.save(filepath)
-            comision.imagen_path = filename
-        
-        db.session.add(comision)
-        db.session.commit()
-        
-        # Crear membresía automática para el creador como coordinador
-        membresia = MembresiaComision(
-            usuario_id=current_user.id,
-            comision_id=comision.id,
-            estado='aprobado',
-            rol='coordinador'
-        )
-        db.session.add(membresia)
-        db.session.commit()
-        
-        flash('Comisión creada correctamente', 'success')
-        return redirect(url_for('comisiones.ver_comision', id=comision.id))
+        try:
+            comision = Comision(
+                nombre=form.nombre.data,
+                descripcion=form.descripcion.data
+            )
+            
+            # Guardar imagen si se proporciona
+            if form.imagen.data:
+                try:
+                    # Asegurar que el directorio existe
+                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                    if upload_folder:
+                        os.makedirs(upload_folder, exist_ok=True)
+                    
+                    filename = secure_filename(form.imagen.data.filename)
+                    # Generar nombre único para evitar colisiones
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    
+                    # En Render, usar /tmp para archivos temporales
+                    if os.environ.get('RENDER'):
+                        temp_path = f"/tmp/{filename}"
+                        form.imagen.data.save(temp_path)
+                        # Copiar al directorio de uploads si es posible
+                        if upload_folder and os.path.exists(upload_folder):
+                            final_path = os.path.join(upload_folder, filename)
+                            import shutil
+                            shutil.copy2(temp_path, final_path)
+                            os.remove(temp_path)
+                        else:
+                            # Si no podemos guardar en uploads, no guardar la imagen
+                            filename = None
+                    else:
+                        # En desarrollo local
+                        filepath = os.path.join(upload_folder, filename)
+                        form.imagen.data.save(filepath)
+                    
+                    if filename:
+                        comision.imagen_path = filename
+                except Exception as e:
+                    print(f"Error guardando imagen: {str(e)}")
+                    # Continuar sin imagen
+                    flash('La imagen no pudo ser guardada, pero la comisión se creará sin imagen', 'warning')
+            
+            db.session.add(comision)
+            db.session.commit()
+            
+            # Crear membresía automática para el creador como coordinador
+            membresia = MembresiaComision(
+                usuario_id=current_user.id,
+                comision_id=comision.id,
+                estado='aprobado',
+                rol='coordinador'
+            )
+            db.session.add(membresia)
+            db.session.commit()
+            
+            flash('Comisión creada correctamente', 'success')
+            return redirect(url_for('comisiones.ver_comision', id=comision.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creando comisión: {str(e)}")
+            flash('Error al crear la comisión. Por favor, inténtelo de nuevo.', 'danger')
+            return redirect(url_for('comisiones.crear_comision'))
     
     return render_template('comisiones/crear.html', title='Crear Comisión', form=form)
 
@@ -153,28 +193,65 @@ def editar_comision(id):
     
     form = ComisionForm()
     if form.validate_on_submit():
-        comision.nombre = form.nombre.data
-        comision.descripcion = form.descripcion.data
-        
-        # Actualizar imagen si se proporciona una nueva
-        if form.imagen.data:
-            filename = secure_filename(form.imagen.data.filename)
-            filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            form.imagen.data.save(filepath)
+        try:
+            comision.nombre = form.nombre.data
+            comision.descripcion = form.descripcion.data
             
-            # Eliminar imagen anterior si existe
-            if comision.imagen_path:
+            # Actualizar imagen si se proporciona una nueva
+            if form.imagen.data:
                 try:
-                    os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], comision.imagen_path))
-                except:
-                    pass
+                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                    if upload_folder:
+                        os.makedirs(upload_folder, exist_ok=True)
+                    
+                    filename = secure_filename(form.imagen.data.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    
+                    # Manejo similar para Render
+                    if os.environ.get('RENDER'):
+                        temp_path = f"/tmp/{filename}"
+                        form.imagen.data.save(temp_path)
+                        if upload_folder and os.path.exists(upload_folder):
+                            final_path = os.path.join(upload_folder, filename)
+                            import shutil
+                            shutil.copy2(temp_path, final_path)
+                            os.remove(temp_path)
+                            
+                            # Eliminar imagen anterior si existe
+                            if comision.imagen_path:
+                                try:
+                                    old_path = os.path.join(upload_folder, comision.imagen_path)
+                                    if os.path.exists(old_path):
+                                        os.remove(old_path)
+                                except:
+                                    pass
+                            
+                            comision.imagen_path = filename
+                    else:
+                        filepath = os.path.join(upload_folder, filename)
+                        form.imagen.data.save(filepath)
+                        
+                        # Eliminar imagen anterior si existe
+                        if comision.imagen_path:
+                            try:
+                                os.remove(os.path.join(upload_folder, comision.imagen_path))
+                            except:
+                                pass
+                        
+                        comision.imagen_path = filename
+                except Exception as e:
+                    print(f"Error actualizando imagen: {str(e)}")
+                    flash('La imagen no pudo ser actualizada', 'warning')
             
-            comision.imagen_path = filename
-        
-        db.session.commit()
-        flash('Comisión actualizada correctamente', 'success')
-        return redirect(url_for('comisiones.ver_comision', id=comision.id))
+            db.session.commit()
+            flash('Comisión actualizada correctamente', 'success')
+            return redirect(url_for('comisiones.ver_comision', id=comision.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error editando comisión: {str(e)}")
+            flash('Error al actualizar la comisión', 'danger')
+            
     elif request.method == 'GET':
         form.nombre.data = comision.nombre
         form.descripcion.data = comision.descripcion
@@ -194,7 +271,7 @@ def listar_miembros(id):
         flash('Debe ser miembro de la comisión para ver la lista completa de miembros', 'warning')
         return redirect(url_for('comisiones.ver_comision', id=comision.id))
     
-    # Obtener miembros aprobados con sus roles - CORREGIDO
+    # Obtener miembros aprobados con sus roles
     miembros_query = db.session.query(MembresiaComision, Usuario).join(
         Usuario, MembresiaComision.usuario_id == Usuario.id
     ).filter(
@@ -202,7 +279,7 @@ def listar_miembros(id):
         MembresiaComision.estado == 'aprobado'
     ).all()
     
-    # Organizar miembros por rol - CORREGIDO
+    # Organizar miembros por rol
     lideres = [(m.usuario, m) for m, u in miembros_query if m.rol == 'lider']
     coordinadores = [(m.usuario, m) for m, u in miembros_query if m.rol == 'coordinador']
     miembros = [(m.usuario, m) for m, u in miembros_query if m.rol == 'miembro']
@@ -245,12 +322,15 @@ def aprobar_miembro(comision_id, usuario_id):
     db.session.commit()
     
     # Notificar al usuario
-    from app.utils.email import send_notification_email
-    usuario = Usuario.query.get(usuario_id)
-    comision = Comision.query.get(comision_id)
-    send_notification_email(usuario, 'membresia_aprobada', {
-        'comision_nombre': comision.nombre
-    })
+    try:
+        from app.utils.email import send_notification_email
+        usuario = Usuario.query.get(usuario_id)
+        comision = Comision.query.get(comision_id)
+        send_notification_email(usuario, 'membresia_aprobada', {
+            'comision_nombre': comision.nombre
+        })
+    except:
+        pass
     
     flash('Miembro aprobado correctamente', 'success')
     return redirect(url_for('comisiones.listar_miembros', id=comision_id))
@@ -408,37 +488,63 @@ def subir_documento(id):
     
     form = DocumentoComisionForm()
     if form.validate_on_submit():
-        # Guardar archivo
-        file = form.documento.data
-        filename = secure_filename(file.filename)
-        filename = f"comision_{comision.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        # Determinar tipo de archivo
-        extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-        
-        documento = DocumentoComision(
-            nombre=form.nombre.data,
-            descripcion=form.descripcion.data,
-            path=filename,
-            tipo=extension,
-            comision_id=comision.id,
-            usuario_id=current_user.id
-        )
-        db.session.add(documento)
-        db.session.commit()
-        
-        # Notificar a los miembros
-        from app.utils.email import notify_members_of_commission
-        notify_members_of_commission(comision.id, 'nuevo_documento', {
-            'comision_nombre': comision.nombre,
-            'documento_nombre': documento.nombre,
-            'documento_descripcion': documento.descripcion,
-            'documento_autor': f"{current_user.nombre} {current_user.apellidos}"
-        })
-        
-        flash('Documento subido correctamente', 'success')
+        try:
+            # Guardar archivo
+            file = form.documento.data
+            filename = secure_filename(file.filename)
+            filename = f"comision_{comision.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+            
+            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            if upload_folder:
+                os.makedirs(upload_folder, exist_ok=True)
+            
+            # Manejo similar para Render
+            if os.environ.get('RENDER'):
+                temp_path = f"/tmp/{filename}"
+                file.save(temp_path)
+                if upload_folder and os.path.exists(upload_folder):
+                    final_path = os.path.join(upload_folder, filename)
+                    import shutil
+                    shutil.copy2(temp_path, final_path)
+                    os.remove(temp_path)
+                else:
+                    flash('No se pudo guardar el documento', 'warning')
+                    return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
+            else:
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
+            
+            # Determinar tipo de archivo
+            extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+            
+            documento = DocumentoComision(
+                nombre=form.nombre.data,
+                descripcion=form.descripcion.data,
+                path=filename,
+                tipo=extension,
+                comision_id=comision.id,
+                usuario_id=current_user.id
+            )
+            db.session.add(documento)
+            db.session.commit()
+            
+            # Notificar a los miembros
+            try:
+                from app.utils.email import notify_members_of_commission
+                notify_members_of_commission(comision.id, 'nuevo_documento', {
+                    'comision_nombre': comision.nombre,
+                    'documento_nombre': documento.nombre,
+                    'documento_descripcion': documento.descripcion,
+                    'documento_autor': f"{current_user.nombre} {current_user.apellidos}"
+                })
+            except:
+                pass
+            
+            flash('Documento subido correctamente', 'success')
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error subiendo documento: {str(e)}")
+            flash('Error al subir el documento', 'danger')
     
     return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
 
