@@ -1,3 +1,18 @@
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
+from flask_mail import Mail
+from flask_socketio import SocketIO
+from config import Config
+import os
+
+db = SQLAlchemy()
+login = LoginManager()
+csrf = CSRFProtect()
+mail = Mail()
+socketio = SocketIO()
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
