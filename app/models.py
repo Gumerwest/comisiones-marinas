@@ -117,6 +117,18 @@ class Comision(db.Model):
     documentos = db.relationship('DocumentoComision', back_populates='comision', lazy='dynamic')
     mensajes_chat = db.relationship('MensajeChat', back_populates='comision', lazy='dynamic')
     
+    def count_miembros_aprobados(self):
+        """Cuenta los miembros aprobados de la comisión"""
+        return self.membresias.filter_by(estado='aprobado').count()
+    
+    def count_temas_aprobados(self):
+        """Cuenta los temas aprobados de la comisión"""
+        return self.temas.filter_by(estado='aprobado').count()
+    
+    def count_documentos(self):
+        """Cuenta los documentos de la comisión"""
+        return self.documentos.count()
+    
     def __repr__(self):
         return f'<Comision {self.nombre}>'
 
@@ -147,6 +159,14 @@ class Tema(db.Model):
     reuniones = db.relationship('Reunion', back_populates='tema', lazy='dynamic')
     votos = db.relationship('Voto', back_populates='tema', lazy='dynamic')
     mensajes_chat = db.relationship('MensajeChat', back_populates='tema', lazy='dynamic')
+    
+    def count_votos(self):
+        """Cuenta los votos del tema"""
+        return self.votos.count()
+    
+    def count_comentarios(self):
+        """Cuenta los comentarios del tema"""
+        return self.comentarios.count()
     
     def __repr__(self):
         return f'<Tema {self.titulo}>'
