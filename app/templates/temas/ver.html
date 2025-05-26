@@ -81,12 +81,13 @@
                                             {% if not tema.lider %}
                                             <li><hr class="dropdown-divider"></li>
                                             <li><h6 class="dropdown-header">Nombrar Líder del Tema</h6></li>
-                                            {% for usuario, membresia in tema.comision.membresias.join('usuario').filter_by(estado='aprobado').all() %}
+                                            {% set miembros_comision = tema.comision.membresias.filter_by(estado='aprobado').all() %}
+                                            {% for membresia in miembros_comision %}
                                             <li>
-                                                <form action="{{ url_for('temas.nombrar_lider_tema', id=tema.id, usuario_id=usuario.id) }}" method="post">
+                                                <form action="{{ url_for('temas.nombrar_lider_tema', id=tema.id, usuario_id=membresia.usuario.id) }}" method="post">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                     <button type="submit" class="dropdown-item">
-                                                        <i class="fas fa-user me-2"></i>{{ usuario.nombre }} {{ usuario.apellidos }}
+                                                        <i class="fas fa-user me-2"></i>{{ membresia.usuario.nombre }} {{ membresia.usuario.apellidos }}
                                                     </button>
                                                 </form>
                                             </li>
