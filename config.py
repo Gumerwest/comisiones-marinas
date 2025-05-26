@@ -19,7 +19,13 @@ class Config:
     }
     
     # Configuración de carga de archivos
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
+    if os.environ.get('RENDER'):
+        # En Render, usar un directorio temporal o desactivar uploads
+        UPLOAD_FOLDER = '/tmp/uploads'
+        # Nota: Los archivos en /tmp se perderán al reiniciar
+    else:
+        UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
+    
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
     
     # Configuración de correo (para producción)
@@ -38,3 +44,15 @@ class Config:
             database_url = database_url.replace('postgres://', 'postgresql://', 1)
         SQLALCHEMY_DATABASE_URI = database_url
         PREFERRED_URL_SCHEME = 'https'
+        
+        # Configuración adicional para producción
+        PROPAGATE_EXCEPTIONS = True
+        
+        # Para Render, usar una configuración más robusta de SQLAlchemy
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_size': 5,
+            'pool_recycle': 300,
+            'pool_pre_ping': True,
+            'max_overflow': 10,
+            'pool_timeout': 30,
+        }
