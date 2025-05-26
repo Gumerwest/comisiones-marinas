@@ -1,62 +1,510 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Comisiones de Trabajo</h2>
-            {% if current_user.rol == 'admin' %}
-            <a href="{{ url_for('comisiones.crear_comision') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nueva Comisión
-            </a>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    {% if comisiones %}
-        {% for comision in comisiones %}
-            <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    {% if comision.imagen_path %}
-                        <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" class="card-img-top" alt="{{ comision.nombre }}" style="height: 200px; object-fit: cover;">
-                    {% else %}
-                        <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
-                            <i class="fas fa-ship fa-4x"></i>
-                        </div>
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ comision.nombre }}</h5>
-                        <p class="card-text">{{ comision.descripcion|truncate(150) }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="badge bg-primary">
-                                    <i class="fas fa-users"></i> {{ comision.membresias.filter_by(estado='aprobado').count() }} miembros
-                                </span>
-                                <span class="badge bg-info">
-                                    <i class="fas fa-lightbulb"></i> {{ comision.temas.filter_by(estado='aprobado').count() }} temas
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-white">
-                        <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" class="btn btn-primary w-100">
-                            Ver Comisión
-                        </a>
-                    </div>
-                </div>
+<div class="comisiones-container">
+    <!-- Header -->
+    <div class="page-header mb-5">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-3">Comisiones de Trabajo</h1>
+                <p class="lead text-muted">
+                    Explora y únete a las comisiones especializadas del sector marítimo español
+                </p>
             </div>
-        {% endfor %}
-    {% else %}
-        <div class="col-md-12">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i> No hay comisiones activas en este momento.
+            <div class="col-md-4 text-md-end">
                 {% if current_user.rol == 'admin' %}
-                    <a href="{{ url_for('comisiones.crear_comision') }}" class="alert-link">Crear la primera comisión</a>.
+                <a href="{{ url_for('comisiones.crear_comision') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Nueva Comisión
+                </a>
                 {% endif %}
             </div>
         </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="filters-section mb-5">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control search-input" 
+                           placeholder="Buscar comisiones..." 
+                           id="searchComisiones">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-2 justify-content-md-end">
+                    <button class="btn btn-outline-secondary active" data-filter="all">
+                        <i class="fas fa-th me-1"></i>Todas
+                    </button>
+                    <button class="btn btn-outline-secondary" data-filter="member">
+                        <i class="fas fa-user-check me-1"></i>Mis comisiones
+                    </button>
+                    <button class="btn btn-outline-secondary" data-filter="available">
+                        <i class="fas fa-user-plus me-1"></i>Disponibles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de Comisiones -->
+    {% if comisiones %}
+    <div class="row g-4" id="comisionesGrid">
+        {% for comision in comisiones %}
+        {% set es_miembro = current_user.es_miembro_de(comision.id) if current_user.is_authenticated else false %}
+        {% set solicitud_pendiente = current_user.is_authenticated and comision.membresias.filter_by(usuario_id=current_user.id, estado='pendiente_aprobacion').first() %}
+        
+        <div class="col-lg-4 col-md-6 comision-item" 
+             data-filter="{{ 'member' if es_miembro else 'available' }}"
+             data-name="{{ comision.nombre|lower }}">
+            <div class="comision-card h-100">
+                <!-- Badge de estado -->
+                {% if es_miembro %}
+                <div class="status-badge member">
+                    <i class="fas fa-check-circle me-1"></i>Miembro
+                </div>
+                {% elif solicitud_pendiente %}
+                <div class="status-badge pending">
+                    <i class="fas fa-clock me-1"></i>Pendiente
+                </div>
+                {% endif %}
+                
+                <!-- Imagen o placeholder -->
+                {% if comision.imagen_path %}
+                <div class="comision-image">
+                    <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" 
+                         alt="{{ comision.nombre }}">
+                </div>
+                {% else %}
+                <div class="comision-image placeholder">
+                    <i class="fas fa-ship fa-3x"></i>
+                </div>
+                {% endif %}
+                
+                <!-- Contenido -->
+                <div class="comision-content">
+                    <h4 class="comision-title">{{ comision.nombre }}</h4>
+                    <p class="comision-description">{{ comision.descripcion|truncate(150) }}</p>
+                    
+                    <!-- Estadísticas -->
+                    <div class="comision-stats">
+                        <div class="stat">
+                            <i class="fas fa-users"></i>
+                            <span>{{ comision.membresias.filter_by(estado='aprobado').count() }}</span>
+                            <small>miembros</small>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>{{ comision.temas.filter_by(estado='aprobado').count() }}</span>
+                            <small>temas</small>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-file"></i>
+                            <span>{{ comision.documentos.count() }}</span>
+                            <small>docs</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Miembros preview -->
+                    {% set miembros_aprobados = comision.membresias.filter_by(estado='aprobado').limit(5).all() %}
+                    {% if miembros_aprobados %}
+                    <div class="members-preview">
+                        <span class="preview-label">Miembros:</span>
+                        <div class="avatar-group">
+                            {% for membresia in miembros_aprobados %}
+                            <div class="avatar" 
+                                 data-bs-toggle="tooltip" 
+                                 title="{{ membresia.usuario.nombre }} {{ membresia.usuario.apellidos }}">
+                                {{ membresia.usuario.nombre[0] }}{{ membresia.usuario.apellidos[0] }}
+                            </div>
+                            {% endfor %}
+                            {% if comision.membresias.filter_by(estado='aprobado').count() > 5 %}
+                            <div class="avatar more">
+                                +{{ comision.membresias.filter_by(estado='aprobado').count() - 5 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Acciones -->
+                    <div class="comision-actions">
+                        {% if es_miembro %}
+                        <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" 
+                           class="btn btn-primary w-100">
+                            <i class="fas fa-arrow-right me-1"></i>Acceder
+                        </a>
+                        {% elif solicitud_pendiente %}
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="fas fa-clock me-1"></i>Solicitud pendiente
+                        </button>
+                        {% else %}
+                        <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" 
+                           class="btn btn-outline-primary w-100">
+                            <i class="fas fa-eye me-1"></i>Ver detalles
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- No results message -->
+    <div class="no-results text-center py-5" style="display: none;">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h4>No se encontraron comisiones</h4>
+        <p class="text-muted">Intenta con otros términos de búsqueda o filtros</p>
+    </div>
+    
+    {% else %}
+    <!-- Empty state -->
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-ship fa-4x text-muted mb-4"></i>
+        <h3>No hay comisiones activas</h3>
+        <p class="text-muted mb-4">
+            Aún no se han creado comisiones en la plataforma.
+        </p>
+        {% if current_user.rol == 'admin' %}
+        <a href="{{ url_for('comisiones.crear_comision') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus me-2"></i>Crear primera comisión
+        </a>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
+
+<!-- Estilos mejorados -->
+<style>
+/* Variables */
+:root {
+    --card-bg: #ffffff;
+    --card-border: #e5e7eb;
+    --primary-color: #3b82f6;
+    --text-muted: #6b7280;
+    --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Container */
+.comisiones-container {
+    padding: 2rem 0;
+}
+
+/* Page header */
+.page-header {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+/* Search box */
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.search-input {
+    padding-left: 2.5rem;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Filter buttons */
+.btn-outline-secondary {
+    border-color: var(--card-border);
+    color: var(--text-muted);
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* Tarjetas de comisión */
+.comision-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.comision-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--hover-shadow);
+    border-color: var(--primary-color);
+}
+
+/* Status badge */
+.status-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.status-badge.member {
+    background: rgba(34, 197, 94, 0.9);
+    color: white;
+}
+
+.status-badge.pending {
+    background: rgba(251, 191, 36, 0.9);
+    color: white;
+}
+
+/* Imagen de comisión */
+.comision-image {
+    height: 180px;
+    overflow: hidden;
+    position: relative;
+    background: #f3f4f6;
+}
+
+.comision-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.comision-card:hover .comision-image img {
+    transform: scale(1.05);
+}
+
+.comision-image.placeholder {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+/* Contenido */
+.comision-content {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.comision-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #1a202c;
+    line-height: 1.4;
+}
+
+.comision-description {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+
+/* Estadísticas */
+.comision-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+    border-top: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+}
+
+.comision-stats .stat {
+    text-align: center;
+}
+
+.comision-stats .stat i {
+    display: block;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.comision-stats .stat span {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.comision-stats .stat small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Preview de miembros */
+.members-preview {
+    margin-bottom: 1rem;
+}
+
+.preview-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.avatar-group {
+    display: flex;
+    margin-left: -0.5rem;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: -0.5rem;
+    border: 2px solid white;
+    position: relative;
+    z-index: 1;
+}
+
+.avatar:hover {
+    z-index: 2;
+    transform: scale(1.1);
+}
+
+.avatar.more {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+/* Acciones */
+.comision-actions {
+    margin-top: auto;
+}
+
+/* No results */
+.no-results {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filters-section .row {
+        gap: 1rem;
+    }
+    
+    .comision-stats {
+        font-size: 0.9rem;
+    }
+}
+
+/* Animación de fade in */
+.comision-item {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
+<!-- Script para búsqueda y filtros -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda
+    const searchInput = document.getElementById('searchComisiones');
+    const comisionItems = document.querySelectorAll('.comision-item');
+    const noResults = document.querySelector('.no-results');
+    const grid = document.getElementById('comisionesGrid');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let hasResults = false;
+            
+            comisionItems.forEach(item => {
+                const name = item.dataset.name;
+                if (name.includes(searchTerm)) {
+                    item.style.display = '';
+                    hasResults = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            if (noResults) {
+                noResults.style.display = hasResults ? 'none' : 'block';
+            }
+        });
+    }
+    
+    // Filtros
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active state
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            let hasResults = false;
+            
+            comisionItems.forEach(item => {
+                if (filter === 'all' || item.dataset.filter === filter) {
+                    item.style.display = '';
+                    hasResults = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            if (noResults) {
+                noResults.style.display = hasResults ? 'none' : 'block';
+            }
+        });
+    });
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
 {% endblock %}
