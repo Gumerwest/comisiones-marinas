@@ -1,231 +1,453 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Hero Section con Comisiones Integradas -->
-<div class="hero-section position-relative overflow-hidden">
-    <div class="hero-background">
-        <img src="{{ url_for('static', filename='img/header.png') }}" alt="Comisiones Marinas" 
-             class="w-100" style="height: 600px; object-fit: cover; filter: brightness(0.7);">
-    </div>
-    
-    <div class="hero-content position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center">
-        <div class="container">
-            <div class="text-center text-white mb-5">
-                <h1 class="display-3 fw-bold mb-3">Comisiones de Trabajo</h1>
-                <p class="lead fs-4">Espacio colaborativo para profesionales del sector marítimo español</p>
-            </div>
-            
-            <!-- Comisiones en el centro de la imagen -->
-            <div class="row g-4 justify-content-center">
-                {% if comisiones %}
-                    {% for comision in comisiones[:4] %}
-                    <div class="col-md-3 col-sm-6">
-                        <div class="comision-card glass-card h-100 hover-zoom">
-                            <div class="card-body text-center">
-                                <div class="icon-wrapper mb-3">
-                                    <i class="fas fa-ship fa-3x text-white"></i>
-                                </div>
-                                <h5 class="text-white mb-2">{{ comision.nombre|truncate(40) }}</h5>
-                                <p class="text-white-50 small mb-3">{{ comision.descripcion|truncate(60) }}</p>
-                                <div class="stats d-flex justify-content-center gap-3 mb-3">
-                                    <span class="badge glass-badge">
-                                        <i class="fas fa-users"></i> {{ comision.membresias.filter_by(estado='aprobado').count() }}
-                                    </span>
-                                    <span class="badge glass-badge">
-                                        <i class="fas fa-lightbulb"></i> {{ comision.temas.filter_by(estado='aprobado').count() }}
-                                    </span>
-                                </div>
-                                {% if current_user.is_authenticated %}
-                                    <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" 
-                                       class="btn btn-glass btn-sm w-100">Entrar</a>
-                                {% else %}
-                                    <a href="{{ url_for('auth.login') }}" 
-                                       class="btn btn-glass btn-sm w-100">Acceder</a>
-                                {% endif %}
-                            </div>
+<div class="home-container">
+    <!-- Hero Section Mejorado -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="container">
+                <div class="row align-items-center min-vh-50">
+                    <div class="col-lg-6">
+                        <h1 class="display-4 fw-bold mb-4">
+                            Comisiones de Trabajo<br>
+                            <span class="text-primary">Marinas de España</span>
+                        </h1>
+                        <p class="lead mb-4">
+                            Espacio colaborativo para profesionales del sector marítimo español. 
+                            Únete a las comisiones especializadas y participa en el desarrollo del sector.
+                        </p>
+                        <div class="d-flex gap-3 flex-wrap">
+                            {% if current_user.is_authenticated %}
+                                <a href="{{ url_for('comisiones.listar_comisiones') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-ship me-2"></i>Ver Comisiones
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-user-plus me-2"></i>Únete Ahora
+                                </a>
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endfor %}
-                {% endif %}
+                    <div class="col-lg-6">
+                        <div class="hero-image">
+                            <img src="{{ url_for('static', filename='img/header.png') }}" 
+                                 alt="Marinas de España" class="img-fluid rounded shadow-lg"
+                                 onerror="this.style.display='none'">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Estadísticas -->
+    <section class="stats-section py-5 bg-light">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-ship"></i>
+                        </div>
+                        <h3 class="stat-number">{{ comisiones|length }}</h3>
+                        <p class="stat-label">Comisiones Activas</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="stat-number">{{ comisiones|sum(attribute='membresias.filter_by(estado="aprobado").count()') }}</h3>
+                        <p class="stat-label">Profesionales</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <h3 class="stat-number">{{ comisiones|sum(attribute='temas.filter_by(estado="aprobado").count()') }}</h3>
+                        <p class="stat-label">Temas Activos</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <h3 class="stat-number">12+</h3>
+                        <p class="stat-label">Colaboradores</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comisiones Grid Mejorado -->
+    <section class="comisiones-section py-5">
+        <div class="container">
+            <div class="section-header text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">Comisiones de Trabajo</h2>
+                <p class="lead text-muted">
+                    Únete a grupos especializados y contribuye al desarrollo del sector marítimo
+                </p>
+            </div>
+
+            {% if comisiones %}
+            <div class="row g-4">
+                {% for comision in comisiones %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="comision-card h-100">
+                        {% if comision.imagen_path %}
+                        <div class="comision-image">
+                            <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" 
+                                 alt="{{ comision.nombre }}">
+                        </div>
+                        {% else %}
+                        <div class="comision-image placeholder">
+                            <i class="fas fa-ship fa-3x"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="comision-content">
+                            <h4 class="comision-title">{{ comision.nombre }}</h4>
+                            <p class="comision-description">{{ comision.descripcion|truncate(120) }}</p>
+                            
+                            <div class="comision-stats">
+                                <div class="stat">
+                                    <i class="fas fa-users"></i>
+                                    <span>{{ comision.membresias.filter_by(estado='aprobado').count() }} miembros</span>
+                                </div>
+                                <div class="stat">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <span>{{ comision.temas.filter_by(estado='aprobado').count() }} temas</span>
+                                </div>
+                            </div>
+                            
+                            {% if current_user.is_authenticated %}
+                                {% set es_miembro = current_user.es_miembro_de(comision.id) %}
+                                <a href="{{ url_for('comisiones.ver_comision', id=comision.id) }}" 
+                                   class="btn btn-primary w-100 mt-3">
+                                    {% if es_miembro %}
+                                        <i class="fas fa-arrow-right me-1"></i>Acceder
+                                    {% else %}
+                                        <i class="fas fa-eye me-1"></i>Ver más
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('auth.login') }}" 
+                                   class="btn btn-outline-primary w-100 mt-3">
+                                    <i class="fas fa-lock me-1"></i>Iniciar sesión
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
             
-            {% if comisiones|length > 4 %}
-            <div class="text-center mt-4">
-                <a href="{{ url_for('comisiones.listar_comisiones') }}" class="btn btn-glass btn-lg">
+            {% if current_user.is_authenticated %}
+            <div class="text-center mt-5">
+                <a href="{{ url_for('comisiones.listar_comisiones') }}" class="btn btn-outline-primary btn-lg">
                     <i class="fas fa-th me-2"></i>Ver todas las comisiones
                 </a>
             </div>
             {% endif %}
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-ship fa-4x text-muted mb-4"></i>
+                <h3>No hay comisiones activas</h3>
+                <p class="text-muted">Las comisiones se mostrarán aquí cuando estén disponibles.</p>
+            </div>
+            {% endif %}
         </div>
-    </div>
-</div>
+    </section>
 
-<!-- Sección de características -->
-<div class="features-section py-5 bg-light">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-md-3 col-sm-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-comments fa-3x text-primary"></i>
-                    </div>
-                    <h5>Chat en Tiempo Real</h5>
-                    <p class="text-muted">Comunicación instantánea entre miembros</p>
-                </div>
+    <!-- Características -->
+    <section class="features-section py-5 bg-light">
+        <div class="container">
+            <div class="section-header text-center mb-5">
+                <h2 class="display-5 fw-bold mb-3">¿Por qué unirse?</h2>
+                <p class="lead text-muted">
+                    Herramientas diseñadas para facilitar la colaboración profesional
+                </p>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-file-upload fa-3x text-success"></i>
+            
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-comments fa-3x"></i>
+                        </div>
+                        <h5>Chat en Tiempo Real</h5>
+                        <p class="text-muted">Comunicación instantánea con otros profesionales del sector</p>
                     </div>
-                    <h5>Gestión Documental</h5>
-                    <p class="text-muted">Comparte y organiza documentos importantes</p>
                 </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-calendar fa-3x text-warning"></i>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-file-upload fa-3x"></i>
+                        </div>
+                        <h5>Gestión Documental</h5>
+                        <p class="text-muted">Comparte y organiza documentación relevante de forma segura</p>
                     </div>
-                    <h5>Reuniones Coordinadas</h5>
-                    <p class="text-muted">Programa encuentros presenciales y virtuales</p>
                 </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="feature-card text-center">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-vote-yea fa-3x text-info"></i>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-calendar fa-3x"></i>
+                        </div>
+                        <h5>Reuniones Coordinadas</h5>
+                        <p class="text-muted">Programa y gestiona encuentros presenciales y virtuales</p>
                     </div>
-                    <h5>Sistema de Votación</h5>
-                    <p class="text-muted">Prioriza temas según su relevancia</p>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="feature-card text-center">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-vote-yea fa-3x"></i>
+                        </div>
+                        <h5>Sistema de Votación</h5>
+                        <p class="text-muted">Prioriza temas según su relevancia e interés común</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    {% if current_user.is_anonymous %}
+    <!-- Call to Action -->
+    <section class="cta-section py-5">
+        <div class="container">
+            <div class="cta-content text-center">
+                <h2 class="display-5 fw-bold mb-3">¿Listo para colaborar?</h2>
+                <p class="lead mb-4">
+                    Únete a la comunidad de profesionales del sector marítimo más importante de España
+                </p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{{ url_for('auth.registro') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Crear cuenta gratuita
+                    </a>
+                    <a href="{{ url_for('main.acerca') }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-info-circle me-2"></i>Más información
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
 </div>
 
-<!-- Call to Action -->
-{% if current_user.is_anonymous %}
-<div class="cta-section py-5 bg-primary text-white">
-    <div class="container text-center">
-        <h2 class="mb-3">Únete a la comunidad marítima</h2>
-        <p class="lead mb-4">Forma parte de las comisiones de trabajo y contribuye al desarrollo del sector</p>
-        <a href="{{ url_for('auth.registro') }}" class="btn btn-light btn-lg">
-            <i class="fas fa-user-plus me-2"></i>Registrarse ahora
-        </a>
-    </div>
-</div>
-{% endif %}
-
+<!-- Estilos mejorados inspirados en el diseño de referencia -->
 <style>
+/* Reset y variables */
+:root {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --secondary: #64748b;
+    --border-color: #e5e7eb;
+    --bg-light: #f8fafc;
+    --text-muted: #6b7280;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Hero Section */
 .hero-section {
+    padding: 5rem 0;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.hero-content h1 {
+    color: #1a202c;
+    line-height: 1.2;
+}
+
+.hero-image {
     position: relative;
-    height: 600px;
-    margin-top: -20px;
+    animation: float 6s ease-in-out infinite;
 }
 
-.hero-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
 }
 
-.hero-content {
-    z-index: 1;
-    background: rgba(0, 0, 0, 0.3);
+/* Estadísticas */
+.stat-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s ease;
 }
 
-.glass-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
-    transition: all 0.3s ease;
-}
-
-.glass-card:hover {
-    background: rgba(255, 255, 255, 0.15);
+.stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
 }
 
-.icon-wrapper {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--bg-light);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    margin: 0 auto 1rem;
+    color: var(--primary);
 }
 
-.comision-card:hover .icon-wrapper {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 0.5rem;
 }
 
-.glass-badge {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: none;
-    padding: 0.4em 0.8em;
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0;
 }
 
-.btn-glass {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    transition: all 0.3s ease;
-}
-
-.btn-glass:hover {
-    background: rgba(255, 255, 255, 0.3);
-    color: white;
-    transform: translateY(-2px);
-}
-
-.feature-card {
-    padding: 2rem;
+/* Tarjetas de Comisión */
+.comision-card {
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
     transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.comision-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.comision-image {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.comision-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.comision-card:hover .comision-image img {
+    transform: scale(1.05);
+}
+
+.comision-image.placeholder {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.comision-content {
+    padding: 1.5rem;
+}
+
+.comision-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #1a202c;
+}
+
+.comision-description {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.comision-stats {
+    display: flex;
+    gap: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.comision-stats .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--secondary);
+}
+
+/* Features */
+.feature-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    height: 100%;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
 
 .feature-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
 }
 
 .feature-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto;
-    background: #f8f9fa;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: var(--primary);
 }
 
+/* CTA Section */
+.cta-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.cta-content h2, .cta-content p {
+    color: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 5rem 0;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
     .hero-section {
-        height: auto;
-        min-height: 500px;
+        padding: 3rem 0;
     }
     
-    .display-3 {
-        font-size: 2rem;
+    .display-4 {
+        font-size: 2.5rem;
     }
     
-    .comision-card {
-        margin-bottom: 1rem;
+    .stat-card {
+        padding: 1.5rem;
     }
+}
+
+/* Utilidades */
+.min-vh-50 {
+    min-height: 50vh;
+}
+
+.section-header {
+    margin-bottom: 3rem;
 }
 </style>
 {% endblock %}
