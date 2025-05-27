@@ -110,7 +110,7 @@
                     </div>
                     <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                         {% if reuniones %}
-                            {% for reunion in reuniones|selectattr('estado', 'equalto', 'aprobada')|list %}
+                            {% for reunion in reuniones %}
                             <div class="mb-3 pb-2 border-bottom">
                                 <h6 class="mb-1">{{ reunion.titulo }}</h6>
                                 <p class="small mb-1">
@@ -125,13 +125,33 @@
                                     {% endif %}
                                 </p>
                                 
-                                {% if reunion.estado == 'pendiente_aprobacion' and current_user.rol == 'admin' %}
-                                <div class="btn-group btn-group-sm">
-                                    <form action="{{ url_for('temas.aprobar_reunion', id=reunion.id) }}" method="post" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-success btn-sm">Aprobar</button>
-                                    </form>
-                                </div>
+                                <!-- Mostrar estado de la reunión -->
+                                {% if reunion.estado == 'pendiente_aprobacion' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock"></i> Pendiente de aprobación
+                                    </span>
+                                    
+                                    <!-- Botones de aprobación para admin o coordinador -->
+                                    {% if current_user.rol == 'admin' or current_user.es_coordinador_de(tema.comision_id) %}
+                                    <div class="btn-group btn-group-sm mt-2">
+                                        <form action="{{ url_for('temas.aprobar_reunion', id=reunion.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check"></i> Aprobar
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('temas.rechazar_reunion', id=reunion.id) }}" method="post" class="d-inline ms-1">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times"></i> Rechazar
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                {% elif reunion.estado == 'aprobada' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> Aprobada
+                                    </span>
                                 {% endif %}
                             </div>
                             {% endfor %}
@@ -309,6 +329,13 @@
                   method="post" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
+                    {% if not config.UPLOADS_ENABLED %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Nota:</strong> La carga de archivos no está disponible en la versión de demostración.
+                        En producción, se recomienda usar un servicio de almacenamiento externo como AWS S3.
+                    </div>
+                    {% endif %}
                     <div class="mb-3">
                         <label class="form-label">Nombre del Documento</label>
                         <input type="text" class="form-control" name="nombre" required>
