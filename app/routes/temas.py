@@ -51,7 +51,8 @@ def ver_tema(id):
                           comentarios=comentarios,
                           documentos=documentos,
                           reuniones=reuniones,
-                          voto_usuario=voto_usuario)
+                          voto_usuario=voto_usuario,
+                          config=current_app.config)
 
 @bp.route('/crear/<int:comision_id>', methods=['GET', 'POST'])
 @login_required
@@ -126,29 +127,50 @@ def gestionar_patrocinador(id):
     
     form = PatrocinadorForm()
     if form.validate_on_submit():
-        tema.patrocinador = form.patrocinador.data
-        tema.enlace_patrocinador = form.enlace.data
-        tema.solucion_patrocinador = form.solucion_patrocinador.data
-        
-        # Guardar logo si se proporciona
-        if form.logo.data:
-            filename = secure_filename(form.logo.data.filename)
-            filename = f"patrocinador_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            form.logo.data.save(filepath)
+        try:
+            tema.patrocinador = form.patrocinador.data
+            tema.enlace_patrocinador = form.enlace.data
+            tema.solucion_patrocinador = form.solucion_patrocinador.data
             
-            # Eliminar logo anterior si existe
-            if tema.logo_patrocinador_path:
+            # Manejar el logo solo si los uploads están habilitados
+            if form.logo.data and current_app.config.get('UPLOADS_ENABLED', False):
                 try:
-                    os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], tema.logo_patrocinador_path))
-                except:
-                    pass
+                    filename = secure_filename(form.logo.data.filename)
+                    filename = f"patrocinador_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    
+                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                    if upload_folder and os.path.exists(upload_folder):
+                        filepath = os.path.join(upload_folder, filename)
+                        form.logo.data.save(filepath)
+                        
+                        # Eliminar logo anterior si existe
+                        if tema.logo_patrocinador_path and upload_folder:
+                            try:
+                                old_path = os.path.join(upload_folder, tema.logo_patrocinador_path)
+                                if os.path.exists(old_path):
+                                    os.remove(old_path)
+                            except:
+                                pass
+                        
+                        tema.logo_patrocinador_path = filename
+                    else:
+                        flash('La carga de imágenes no está disponible en este momento.', 'warning')
+                except Exception as e:
+                    print(f"Error guardando logo: {str(e)}")
+                    flash('El logo no pudo ser guardado, pero la información del patrocinador se actualizó.', 'warning')
+            elif form.logo.data and not current_app.config.get('UPLOADS_ENABLED', False):
+                flash('La carga de imágenes no está disponible en la versión de demostración. La información del patrocinador se guardará sin logo.', 'info')
             
-            tema.logo_patrocinador_path = filename
-        
-        db.session.commit()
-        flash('Información de patrocinador actualizada correctamente', 'success')
-        return redirect(url_for('temas.ver_tema', id=tema.id))
+            db.session.commit()
+            flash('Información de patrocinador actualizada correctamente', 'success')
+            return redirect(url_for('temas.ver_tema', id=tema.id))
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error actualizando patrocinador: {str(e)}")
+            flash('Error al actualizar la información del patrocinador', 'danger')
+            return redirect(url_for('temas.gestionar_patrocinador', id=tema.id))
+            
     elif request.method == 'GET':
         form.patrocinador.data = tema.patrocinador
         form.enlace.data = tema.enlace_patrocinador
@@ -157,7 +179,8 @@ def gestionar_patrocinador(id):
     return render_template('temas/patrocinador.html',
                           title='Gestionar Patrocinador',
                           form=form,
-                          tema=tema)
+                          tema=tema,
+                          config=current_app.config)
 
 @bp.route('/<int:id>/aprobar', methods=['POST'])
 @login_required
@@ -174,12 +197,15 @@ def aprobar_tema(id):
     db.session.commit()
     
     # Notificar a los miembros
-    from app.utils.email import notify_members_of_commission
-    notify_members_of_commission(comision.id, 'nuevo_tema', {
-        'comision_nombre': comision.nombre,
-        'tema_titulo': tema.titulo,
-        'tema_resumen': tema.resumen
-    })
+    try:
+        from app.utils.email import notify_members_of_commission
+        notify_members_of_commission(comision.id, 'nuevo_tema', {
+            'comision_nombre': comision.nombre,
+            'tema_titulo': tema.titulo,
+            'tema_resumen': tema.resumen
+        })
+    except:
+        pass
     
     flash('Tema aprobado correctamente', 'success')
     return redirect(url_for('temas.ver_tema', id=tema.id))
@@ -278,12 +304,15 @@ def comentar(id):
         db.session.commit()
         
         # Notificar a los miembros
-        from app.utils.email import notify_members_of_commission
-        notify_members_of_commission(comision.id, 'nuevo_comentario', {
-            'tema_titulo': tema.titulo,
-            'comentario_autor': f"{current_user.nombre} {current_user.apellidos}",
-            'comentario_texto': form.contenido.data
-        })
+        try:
+            from app.utils.email import notify_members_of_commission
+            notify_members_of_commission(comision.id, 'nuevo_comentario', {
+                'tema_titulo': tema.titulo,
+                'comentario_autor': f"{current_user.nombre} {current_user.apellidos}",
+                'comentario_texto': form.contenido.data
+            })
+        except:
+            pass
         
         flash('Comentario añadido correctamente', 'success')
     
@@ -300,39 +329,57 @@ def subir_documento(id):
         flash('Debe ser miembro de la comisión para subir documentos', 'warning')
         return redirect(url_for('temas.ver_tema', id=tema.id))
     
+    # Verificar si los uploads están habilitados
+    if not current_app.config.get('UPLOADS_ENABLED', False):
+        flash('La carga de archivos no está disponible en la versión de demostración. Esta función requiere un servicio de almacenamiento externo.', 'warning')
+        return redirect(url_for('temas.ver_tema', id=tema.id))
+    
     form = DocumentoForm()
     if form.validate_on_submit():
-        # Guardar archivo
-        file = form.documento.data
-        filename = secure_filename(file.filename)
-        filename = f"tema_{tema.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        # Determinar tipo de archivo
-        extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-        
-        documento = Documento(
-            nombre=form.nombre.data,
-            descripcion=form.descripcion.data,
-            path=filename,
-            tipo=extension,
-            tema_id=tema.id,
-            usuario_id=current_user.id
-        )
-        db.session.add(documento)
-        db.session.commit()
-        
-        # Notificar a los miembros
-        from app.utils.email import notify_members_of_commission
-        notify_members_of_commission(comision.id, 'nuevo_documento', {
-            'tema_titulo': tema.titulo,
-            'documento_nombre': documento.nombre,
-            'documento_descripcion': documento.descripcion,
-            'documento_autor': f"{current_user.nombre} {current_user.apellidos}"
-        })
-        
-        flash('Documento subido correctamente', 'success')
+        try:
+            # Guardar archivo
+            file = form.documento.data
+            filename = secure_filename(file.filename)
+            filename = f"tema_{tema.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+            
+            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            if upload_folder and os.path.exists(upload_folder):
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
+                
+                # Determinar tipo de archivo
+                extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                
+                documento = Documento(
+                    nombre=form.nombre.data,
+                    descripcion=form.descripcion.data,
+                    path=filename,
+                    tipo=extension,
+                    tema_id=tema.id,
+                    usuario_id=current_user.id
+                )
+                db.session.add(documento)
+                db.session.commit()
+                
+                # Notificar a los miembros
+                try:
+                    from app.utils.email import notify_members_of_commission
+                    notify_members_of_commission(comision.id, 'nuevo_documento', {
+                        'tema_titulo': tema.titulo,
+                        'documento_nombre': documento.nombre,
+                        'documento_descripcion': documento.descripcion,
+                        'documento_autor': f"{current_user.nombre} {current_user.apellidos}"
+                    })
+                except:
+                    pass
+                
+                flash('Documento subido correctamente', 'success')
+            else:
+                flash('Error: el directorio de carga no está disponible', 'danger')
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error subiendo documento: {str(e)}")
+            flash('Error al subir el documento', 'danger')
     
     return redirect(url_for('temas.ver_tema', id=tema.id))
 
@@ -386,13 +433,16 @@ def aprobar_reunion(id):
     db.session.commit()
     
     # Notificar a los miembros
-    from app.utils.email import notify_members_of_commission
-    notify_members_of_commission(comision.id, 'nueva_reunion', {
-        'tema_titulo': tema.titulo,
-        'reunion_titulo': reunion.titulo,
-        'reunion_fecha': reunion.fecha.strftime('%d/%m/%Y %H:%M'),
-        'reunion_lugar': reunion.lugar or 'Virtual'
-    })
+    try:
+        from app.utils.email import notify_members_of_commission
+        notify_members_of_commission(comision.id, 'nueva_reunion', {
+            'tema_titulo': tema.titulo,
+            'reunion_titulo': reunion.titulo,
+            'reunion_fecha': reunion.fecha.strftime('%d/%m/%Y %H:%M'),
+            'reunion_lugar': reunion.lugar or 'Virtual'
+        })
+    except:
+        pass
     
     flash('Reunión aprobada correctamente', 'success')
     return redirect(url_for('temas.ver_tema', id=tema.id))
