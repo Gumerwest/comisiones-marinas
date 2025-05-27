@@ -20,11 +20,12 @@ class Config:
     
     # Configuración de carga de archivos
     if os.environ.get('RENDER'):
-        # En Render, usar un directorio temporal o desactivar uploads
-        UPLOAD_FOLDER = '/tmp/uploads'
-        # Nota: Los archivos en /tmp se perderán al reiniciar
+        # En Render, avisar que no se soportan uploads
+        UPLOAD_FOLDER = None
+        UPLOADS_ENABLED = False
     else:
         UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
+        UPLOADS_ENABLED = True
     
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
     
