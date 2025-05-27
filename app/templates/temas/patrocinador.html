@@ -18,6 +18,14 @@
                 <h4 class="mb-0">Gestionar Patrocinador</h4>
             </div>
             <div class="card-body">
+                {% if not config.UPLOADS_ENABLED %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Nota:</strong> La carga de imágenes no está disponible en la versión de demostración. 
+                    La información del patrocinador se guardará sin logo.
+                </div>
+                {% endif %}
+                
                 <form method="post" enctype="multipart/form-data" novalidate>
                     {{ form.hidden_tag() }}
                     
@@ -31,15 +39,22 @@
                     
                     <div class="mb-3">
                         {{ form.logo.label(class="form-label") }}
-                        {{ form.logo(class="form-control" + (" is-invalid" if form.logo.errors else ""), accept="image/*") }}
-                        {% for error in form.logo.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                        {% if tema.logo_patrocinador_path %}
-                        <div class="mt-2">
-                            <p>Logo actual:</p>
-                            <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="Logo actual" style="max-height: 100px;">
-                        </div>
+                        {% if config.UPLOADS_ENABLED %}
+                            {{ form.logo(class="form-control" + (" is-invalid" if form.logo.errors else ""), accept="image/*") }}
+                            {% for error in form.logo.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            {% if tema.logo_patrocinador_path %}
+                            <div class="mt-2">
+                                <p>Logo actual:</p>
+                                <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" alt="Logo actual" style="max-height: 100px;">
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <input type="file" class="form-control" disabled>
+                            <div class="form-text text-muted">
+                                La carga de imágenes no está disponible en esta versión.
+                            </div>
                         {% endif %}
                     </div>
                     
