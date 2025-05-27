@@ -93,18 +93,14 @@ def crear_comision():
             # Manejo de imagen con soporte para Render
             if form.imagen.data:
                 try:
-                    filename = secure_filename(form.imagen.data.filename)
-                    # Generar nombre único
-                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    
-                    if os.environ.get('RENDER'):
-                        # En Render, no guardamos imágenes
-                        print("En Render: Saltando guardado de imagen")
-                        # Opcionalmente, podrías subir a un servicio externo como S3
-                        # Por ahora, simplemente no guardamos la imagen
-                        pass
+                    # Verificar si los uploads están habilitados
+                    if not current_app.config.get('UPLOADS_ENABLED', True):
+                        flash('La carga de imágenes no está disponible en la versión de demostración', 'warning')
                     else:
-                        # En desarrollo local
+                        filename = secure_filename(form.imagen.data.filename)
+                        # Generar nombre único
+                        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                        
                         upload_folder = current_app.config.get('UPLOAD_FOLDER')
                         if upload_folder:
                             os.makedirs(upload_folder, exist_ok=True)
@@ -194,13 +190,13 @@ def editar_comision(id):
             # Actualizar imagen si se proporciona una nueva
             if form.imagen.data:
                 try:
-                    filename = secure_filename(form.imagen.data.filename)
-                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    
-                    if os.environ.get('RENDER'):
-                        # En Render, no actualizamos imágenes
-                        print("En Render: Saltando actualización de imagen")
+                    # Verificar si los uploads están habilitados
+                    if not current_app.config.get('UPLOADS_ENABLED', True):
+                        flash('La carga de imágenes no está disponible en la versión de demostración', 'warning')
                     else:
+                        filename = secure_filename(form.imagen.data.filename)
+                        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                        
                         upload_folder = current_app.config.get('UPLOAD_FOLDER')
                         if upload_folder:
                             os.makedirs(upload_folder, exist_ok=True)
@@ -208,7 +204,7 @@ def editar_comision(id):
                             form.imagen.data.save(filepath)
                             
                             # Eliminar imagen anterior si existe
-                            if comision.imagen_path:
+                            if comision.imagen_path and upload_folder:
                                 try:
                                     old_path = os.path.join(upload_folder, comision.imagen_path)
                                     if os.path.exists(old_path):
@@ -467,39 +463,41 @@ def subir_documento(id):
     form = DocumentoComisionForm()
     if form.validate_on_submit():
         try:
-            if os.environ.get('RENDER'):
-                # En Render, no guardamos archivos
-                flash('La carga de archivos no está disponible en la versión de demostración', 'info')
+            # Verificar si los uploads están habilitados
+            if not current_app.config.get('UPLOADS_ENABLED', True):
+                flash('La carga de archivos no está disponible en este momento. Esta función está deshabilitada en la versión de demostración.', 'warning')
                 return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
             
-            # Guardar archivo (solo en desarrollo local)
+            # Verificar que existe el directorio de uploads
+            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            if not upload_folder:
+                flash('La carga de archivos no está configurada en este servidor.', 'warning')
+                return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
+            
+            # Guardar archivo
             file = form.documento.data
             filename = secure_filename(file.filename)
             filename = f"comision_{comision.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
             
-            upload_folder = current_app.config.get('UPLOAD_FOLDER')
-            if upload_folder:
-                os.makedirs(upload_folder, exist_ok=True)
-                filepath = os.path.join(upload_folder, filename)
-                file.save(filepath)
-                
-                # Determinar tipo de archivo
-                extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-                
-                documento = DocumentoComision(
-                    nombre=form.nombre.data,
-                    descripcion=form.descripcion.data,
-                    path=filename,
-                    tipo=extension,
-                    comision_id=comision.id,
-                    usuario_id=current_user.id
-                )
-                db.session.add(documento)
-                db.session.commit()
-                
-                flash('Documento subido correctamente', 'success')
-            else:
-                flash('Error en la configuración del servidor', 'danger')
+            os.makedirs(upload_folder, exist_ok=True)
+            filepath = os.path.join(upload_folder, filename)
+            file.save(filepath)
+            
+            # Determinar tipo de archivo
+            extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+            
+            documento = DocumentoComision(
+                nombre=form.nombre.data,
+                descripcion=form.descripcion.data,
+                path=filename,
+                tipo=extension,
+                comision_id=comision.id,
+                usuario_id=current_user.id
+            )
+            db.session.add(documento)
+            db.session.commit()
+            
+            flash('Documento subido correctamente', 'success')
                 
         except Exception as e:
             db.session.rollback()
