@@ -172,7 +172,14 @@
                                         <i class="fas fa-file"></i> {{ tema.documentos.all()|length }} docs
                                     </small>
                                     <small>
-                                        <i class="fas fa-calendar-check"></i> {{ tema.reuniones.filter_by(estado='aprobada').all()|length }} reuniones
+                                        <i class="fas fa-calendar-check"></i> 
+                                        {% set reuniones_aprobadas = [] %}
+                                        {% for reunion in tema.reuniones.all() %}
+                                            {% if reunion.estado == 'aprobada' %}
+                                                {% set _ = reuniones_aprobadas.append(reunion) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {{ reuniones_aprobadas|length }} reuniones
                                     </small>
                                 </div>
                             </div>
@@ -330,38 +337,46 @@
         <div class="tab-pane fade" id="reuniones">
             <h5 class="mb-4">Próximas Reuniones</h5>
             
-            <!-- Simplificamos: mostramos todas las reuniones aprobadas de todos los temas -->
+            <!-- Recolectamos todas las reuniones de todos los temas -->
+            {% set todas_reuniones = [] %}
+            {% for tema in temas %}
+                {% for reunion in tema.reuniones.all() %}
+                    {% if reunion.estado == 'aprobada' %}
+                        {% set _ = todas_reuniones.append(reunion) %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+            
+            <!-- Mostramos las reuniones futuras -->
             <div class="row g-3">
                 {% set reunion_count = namespace(value=0) %}
-                {% for tema in temas %}
-                    {% for reunion in tema.reuniones.filter_by(estado='aprobada').order_by('fecha').all() %}
-                        {% if reunion.fecha > now() and reunion_count.value < 6 %}
-                            {% set reunion_count.value = reunion_count.value + 1 %}
-                            <div class="col-md-6 col-lg-4">
-                                <div class="reunion-card">
-                                    <div class="reunion-date">
-                                        <i class="fas fa-calendar-alt"></i>
-                                        {{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
-                                    </div>
-                                    <h6 class="reunion-title">{{ reunion.titulo }}</h6>
-                                    <p class="reunion-topic">
-                                        <i class="fas fa-lightbulb"></i> {{ reunion.tema.titulo|truncate(30) }}
-                                    </p>
-                                    {% if reunion.lugar %}
-                                    <p class="reunion-location">
-                                        <i class="fas fa-map-marker-alt"></i> {{ reunion.lugar }}
-                                    </p>
-                                    {% endif %}
-                                    {% if reunion.enlace_virtual %}
-                                    <a href="{{ reunion.enlace_virtual }}" target="_blank" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-video"></i> Unirse
-                                    </a>
-                                    {% endif %}
+                {% for reunion in todas_reuniones|sort(attribute='fecha') %}
+                    {% if reunion.fecha > now() and reunion_count.value < 6 %}
+                        {% set reunion_count.value = reunion_count.value + 1 %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="reunion-card">
+                                <div class="reunion-date">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    {{ reunion.fecha.strftime('%d/%m/%Y %H:%M') }}
                                 </div>
+                                <h6 class="reunion-title">{{ reunion.titulo }}</h6>
+                                <p class="reunion-topic">
+                                    <i class="fas fa-lightbulb"></i> {{ reunion.tema.titulo|truncate(30) }}
+                                </p>
+                                {% if reunion.lugar %}
+                                <p class="reunion-location">
+                                    <i class="fas fa-map-marker-alt"></i> {{ reunion.lugar }}
+                                </p>
+                                {% endif %}
+                                {% if reunion.enlace_virtual %}
+                                <a href="{{ reunion.enlace_virtual }}" target="_blank" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-video"></i> Unirse
+                                </a>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    {% endfor %}
+                        </div>
+                    {% endif %}
                 {% endfor %}
             </div>
             
@@ -388,18 +403,16 @@
                     </thead>
                     <tbody>
                         {% set past_count = namespace(value=0) %}
-                        {% for tema in temas %}
-                            {% for reunion in tema.reuniones.filter_by(estado='aprobada').order_by(tema.reuniones.c.fecha.desc()).all() %}
-                                {% if reunion.fecha <= now() and past_count.value < 10 %}
-                                    {% set past_count.value = past_count.value + 1 %}
-                                    <tr>
-                                        <td>{{ reunion.fecha.strftime('%d/%m/%Y') }}</td>
-                                        <td>{{ reunion.titulo }}</td>
-                                        <td>{{ reunion.tema.titulo|truncate(30) }}</td>
-                                        <td>{{ reunion.lugar or 'Virtual' }}</td>
-                                    </tr>
-                                {% endif %}
-                            {% endfor %}
+                        {% for reunion in todas_reuniones|sort(attribute='fecha', reverse=true) %}
+                            {% if reunion.fecha <= now() and past_count.value < 10 %}
+                                {% set past_count.value = past_count.value + 1 %}
+                                <tr>
+                                    <td>{{ reunion.fecha.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ reunion.titulo }}</td>
+                                    <td>{{ reunion.tema.titulo|truncate(30) }}</td>
+                                    <td>{{ reunion.lugar or 'Virtual' }}</td>
+                                </tr>
+                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
