@@ -18,16 +18,17 @@ class Config:
         'max_overflow': 20,
     }
     
-    # Configuración de carga de archivos
+    # Configuración de carga de archivos - DESHABILITADA EN RENDER
     if os.environ.get('RENDER'):
-        # En Render, avisar que no se soportan uploads
+        # En Render, NO se pueden guardar archivos
         UPLOAD_FOLDER = None
         UPLOADS_ENABLED = False
+        MAX_CONTENT_LENGTH = 1 * 1024 * 1024  # 1 MB max (solo para evitar grandes uploads)
     else:
+        # Solo en desarrollo local
         UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
         UPLOADS_ENABLED = True
-    
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
+        MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
     
     # Configuración de correo (para producción)
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
