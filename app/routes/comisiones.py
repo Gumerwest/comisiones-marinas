@@ -50,12 +50,12 @@ def ver_comision(id):
     coordinadores = [(m.usuario, m) for m, u in miembros_query if m.rol == 'coordinador']
     miembros = [(m.usuario, m) for m, u in miembros_query if m.rol == 'miembro']
     
-    # IMPORTANTE: Obtener documentos ordenados aquí en Python
+    # Obtener documentos ordenados
     documentos_ordenados = DocumentoComision.query.filter_by(
         comision_id=comision.id
     ).order_by(DocumentoComision.fecha_subida.desc()).all()
     
-    # Añadir función now para las plantillas
+    # Función now para las plantillas
     from datetime import datetime as dt
     now = dt.utcnow
     
@@ -71,8 +71,9 @@ def ver_comision(id):
                           coordinadores=coordinadores,
                           miembros=miembros,
                           total_miembros=len(miembros_query),
-                          documentos_ordenados=documentos_ordenados,  # Pasar documentos ya ordenados
-                          now=now)
+                          documentos_ordenados=documentos_ordenados,
+                          now=now,
+                          config=current_app.config)
 
 @bp.route('/crear', methods=['GET', 'POST'])
 @login_required
@@ -90,26 +91,25 @@ def crear_comision():
                 descripcion=form.descripcion.data
             )
             
-            # Manejo de imagen con soporte para Render
-            if form.imagen.data:
+            # Manejo de imagen
+            if form.imagen.data and current_app.config.get('UPLOADS_ENABLED', False):
                 try:
-                    # Verificar si los uploads están habilitados
-                    if not current_app.config.get('UPLOADS_ENABLED', True):
-                        flash('La carga de imágenes no está disponible en la versión de demostración', 'warning')
+                    filename = secure_filename(form.imagen.data.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    
+                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                    if upload_folder and os.path.exists(upload_folder):
+                        os.makedirs(upload_folder, exist_ok=True)
+                        filepath = os.path.join(upload_folder, filename)
+                        form.imagen.data.save(filepath)
+                        comision.imagen_path = filename
                     else:
-                        filename = secure_filename(form.imagen.data.filename)
-                        # Generar nombre único
-                        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                        
-                        upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                        if upload_folder:
-                            os.makedirs(upload_folder, exist_ok=True)
-                            filepath = os.path.join(upload_folder, filename)
-                            form.imagen.data.save(filepath)
-                            comision.imagen_path = filename
+                        flash('La carga de imágenes no está disponible en este momento', 'warning')
                 except Exception as e:
                     print(f"Error con imagen: {str(e)}")
                     flash('La imagen no pudo ser guardada, pero la comisión se creará sin imagen', 'warning')
+            elif form.imagen.data and not current_app.config.get('UPLOADS_ENABLED', False):
+                flash('La carga de imágenes no está disponible en la versión de demostración', 'info')
             
             db.session.add(comision)
             db.session.commit()
@@ -133,7 +133,10 @@ def crear_comision():
             flash(f'Error al crear la comisión: {str(e)}', 'danger')
             return redirect(url_for('comisiones.crear_comision'))
     
-    return render_template('comisiones/crear.html', title='Crear Comisión', form=form)
+    return render_template('comisiones/crear.html', 
+                          title='Crear Comisión', 
+                          form=form,
+                          config=current_app.config)
 
 @bp.route('/<int:id>/solicitar', methods=['GET', 'POST'])
 @login_required
@@ -188,34 +191,34 @@ def editar_comision(id):
             comision.descripcion = form.descripcion.data
             
             # Actualizar imagen si se proporciona una nueva
-            if form.imagen.data:
+            if form.imagen.data and current_app.config.get('UPLOADS_ENABLED', False):
                 try:
-                    # Verificar si los uploads están habilitados
-                    if not current_app.config.get('UPLOADS_ENABLED', True):
-                        flash('La carga de imágenes no está disponible en la versión de demostración', 'warning')
-                    else:
-                        filename = secure_filename(form.imagen.data.filename)
-                        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    filename = secure_filename(form.imagen.data.filename)
+                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                    
+                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                    if upload_folder and os.path.exists(upload_folder):
+                        os.makedirs(upload_folder, exist_ok=True)
+                        filepath = os.path.join(upload_folder, filename)
+                        form.imagen.data.save(filepath)
                         
-                        upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                        if upload_folder:
-                            os.makedirs(upload_folder, exist_ok=True)
-                            filepath = os.path.join(upload_folder, filename)
-                            form.imagen.data.save(filepath)
-                            
-                            # Eliminar imagen anterior si existe
-                            if comision.imagen_path and upload_folder:
-                                try:
-                                    old_path = os.path.join(upload_folder, comision.imagen_path)
-                                    if os.path.exists(old_path):
-                                        os.remove(old_path)
-                                except:
-                                    pass
-                            
-                            comision.imagen_path = filename
+                        # Eliminar imagen anterior si existe
+                        if comision.imagen_path and upload_folder:
+                            try:
+                                old_path = os.path.join(upload_folder, comision.imagen_path)
+                                if os.path.exists(old_path):
+                                    os.remove(old_path)
+                            except:
+                                pass
+                        
+                        comision.imagen_path = filename
+                    else:
+                        flash('La carga de imágenes no está disponible en este momento', 'warning')
                 except Exception as e:
                     print(f"Error actualizando imagen: {str(e)}")
                     flash('La imagen no pudo ser actualizada', 'warning')
+            elif form.imagen.data and not current_app.config.get('UPLOADS_ENABLED', False):
+                flash('La carga de imágenes no está disponible en la versión de demostración', 'info')
             
             db.session.commit()
             flash('Comisión actualizada correctamente', 'success')
@@ -233,7 +236,8 @@ def editar_comision(id):
     return render_template('comisiones/editar.html', 
                           title='Editar Comisión',
                           comision=comision,
-                          form=form)
+                          form=form,
+                          config=current_app.config)
 
 @bp.route('/<int:id>/miembros')
 @login_required
@@ -460,45 +464,42 @@ def subir_documento(id):
         flash('Debe ser miembro de la comisión para subir documentos', 'warning')
         return redirect(url_for('comisiones.ver_comision', id=comision.id))
     
+    # Verificar si los uploads están habilitados
+    if not current_app.config.get('UPLOADS_ENABLED', False):
+        flash('La carga de archivos no está disponible en la versión de demostración. Esta función requiere un servicio de almacenamiento externo.', 'warning')
+        return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
+    
     form = DocumentoComisionForm()
     if form.validate_on_submit():
         try:
-            # Verificar si los uploads están habilitados
-            if not current_app.config.get('UPLOADS_ENABLED', True):
-                flash('La carga de archivos no está disponible en este momento. Esta función está deshabilitada en la versión de demostración.', 'warning')
-                return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
-            
-            # Verificar que existe el directorio de uploads
-            upload_folder = current_app.config.get('UPLOAD_FOLDER')
-            if not upload_folder:
-                flash('La carga de archivos no está configurada en este servidor.', 'warning')
-                return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
-            
             # Guardar archivo
             file = form.documento.data
             filename = secure_filename(file.filename)
             filename = f"comision_{comision.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
             
-            os.makedirs(upload_folder, exist_ok=True)
-            filepath = os.path.join(upload_folder, filename)
-            file.save(filepath)
-            
-            # Determinar tipo de archivo
-            extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-            
-            documento = DocumentoComision(
-                nombre=form.nombre.data,
-                descripcion=form.descripcion.data,
-                path=filename,
-                tipo=extension,
-                comision_id=comision.id,
-                usuario_id=current_user.id
-            )
-            db.session.add(documento)
-            db.session.commit()
-            
-            flash('Documento subido correctamente', 'success')
+            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            if upload_folder and os.path.exists(upload_folder):
+                os.makedirs(upload_folder, exist_ok=True)
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
                 
+                # Determinar tipo de archivo
+                extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                
+                documento = DocumentoComision(
+                    nombre=form.nombre.data,
+                    descripcion=form.descripcion.data,
+                    path=filename,
+                    tipo=extension,
+                    comision_id=comision.id,
+                    usuario_id=current_user.id
+                )
+                db.session.add(documento)
+                db.session.commit()
+                
+                flash('Documento subido correctamente', 'success')
+            else:
+                flash('Error: el directorio de carga no está disponible', 'danger')
         except Exception as e:
             db.session.rollback()
             print(f"Error subiendo documento: {str(e)}")
