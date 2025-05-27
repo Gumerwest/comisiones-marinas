@@ -470,6 +470,13 @@
                   method="post" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
+                    {% if not config.UPLOADS_ENABLED %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Nota:</strong> La carga de archivos no está disponible en la versión de demostración.
+                        En producción, se recomienda usar un servicio de almacenamiento externo como AWS S3.
+                    </div>
+                    {% endif %}
                     <div class="mb-3">
                         <label class="form-label">Nombre del Documento</label>
                         <input type="text" class="form-control" name="nombre" required>
