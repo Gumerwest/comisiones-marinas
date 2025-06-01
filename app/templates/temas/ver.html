@@ -263,9 +263,14 @@
             </div>
             <div class="card-body">
                 {% if tema.patrocinador %}
-                    {% if tema.logo_patrocinador_path and config.get('UPLOADS_ENABLED') %}
-                    <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" 
-                         alt="{{ tema.patrocinador }}" class="img-fluid mb-2" style="max-height: 100px;">
+                    {% if tema.logo_patrocinador_path %}
+                        {% if 'cloudinary.com' in tema.logo_patrocinador_path %}
+                            <img src="{{ tema.logo_patrocinador_path }}" 
+                                 alt="{{ tema.patrocinador }}" class="img-fluid mb-2" style="max-height: 100px;">
+                        {% elif config.get('UPLOADS_ENABLED') %}
+                            <img src="{{ url_for('static', filename='uploads/' + tema.logo_patrocinador_path) }}" 
+                                 alt="{{ tema.patrocinador }}" class="img-fluid mb-2" style="max-height: 100px;">
+                        {% endif %}
                     {% endif %}
                     <h6>{{ tema.patrocinador }}</h6>
                     {% if tema.enlace_patrocinador %}
