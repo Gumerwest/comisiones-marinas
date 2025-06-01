@@ -6,8 +6,68 @@ from app.forms.temas import TemaForm, PatrocinadorForm, ComentarioForm, Document
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
+import cloudinary
+import cloudinary.uploader
 
 bp = Blueprint('temas', __name__)
+
+def init_cloudinary():
+    """Inicializar Cloudinary si está configurado"""
+    try:
+        if not current_app.config.get('USE_CLOUDINARY'):
+            return False
+            
+        cloudinary.config(
+            cloud_name=current_app.config.get('CLOUDINARY_CLOUD_NAME'),
+            api_key=current_app.config.get('CLOUDINARY_API_KEY'),
+            api_secret=current_app.config.get('CLOUDINARY_API_SECRET'),
+            secure=True
+        )
+        return True
+    except Exception as e:
+        print(f"Error configurando Cloudinary: {str(e)}")
+        return False
+
+def upload_file_to_storage(file, folder="documentos"):
+    """Subir archivo a Cloudinary o almacenamiento local"""
+    if not file or not file.filename:
+        return None
+    
+    # Generar nombre único
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    original_filename = secure_filename(file.filename)
+    
+    if current_app.config.get('USE_CLOUDINARY') and init_cloudinary():
+        try:
+            # Subir a Cloudinary
+            result = cloudinary.uploader.upload(
+                file,
+                folder=folder,
+                public_id=f"{folder}/{timestamp}_{original_filename}",
+                resource_type="auto",
+                overwrite=False
+            )
+            print(f"✅ Archivo subido a Cloudinary: {result['public_id']}")
+            return result['secure_url']
+        except Exception as e:
+            print(f"❌ Error subiendo a Cloudinary: {str(e)}")
+            return None
+    else:
+        # Usar filesystem local (solo para desarrollo)
+        try:
+            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            if not upload_folder:
+                return None
+                
+            os.makedirs(upload_folder, exist_ok=True)
+            filename = f"{timestamp}_{original_filename}"
+            filepath = os.path.join(upload_folder, filename)
+            file.save(filepath)
+            print(f"✅ Archivo guardado localmente: {filename}")
+            return filename
+        except Exception as e:
+            print(f"❌ Error guardando archivo local: {str(e)}")
+            return None
 
 @bp.route('/<int:id>')
 @login_required
@@ -132,34 +192,18 @@ def gestionar_patrocinador(id):
             tema.enlace_patrocinador = form.enlace.data
             tema.solucion_patrocinador = form.solucion_patrocinador.data
             
-            # Manejar el logo solo si los uploads están habilitados
-            if form.logo.data and current_app.config.get('UPLOADS_ENABLED', False):
-                try:
-                    filename = secure_filename(form.logo.data.filename)
-                    filename = f"patrocinador_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    
-                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                    if upload_folder and os.path.exists(upload_folder):
-                        filepath = os.path.join(upload_folder, filename)
-                        form.logo.data.save(filepath)
-                        
-                        # Eliminar logo anterior si existe
-                        if tema.logo_patrocinador_path and upload_folder:
-                            try:
-                                old_path = os.path.join(upload_folder, tema.logo_patrocinador_path)
-                                if os.path.exists(old_path):
-                                    os.remove(old_path)
-                            except:
-                                pass
-                        
-                        tema.logo_patrocinador_path = filename
-                    else:
-                        flash('La carga de imágenes no está disponible en este momento.', 'warning')
-                except Exception as e:
-                    print(f"Error guardando logo: {str(e)}")
-                    flash('El logo no pudo ser guardado, pero la información del patrocinador se actualizó.', 'warning')
-            elif form.logo.data and not current_app.config.get('UPLOADS_ENABLED', False):
-                flash('La carga de imágenes no está disponible en la versión de demostración. La información del patrocinador se guardará sin logo.', 'info')
+            # Manejar el logo
+            if form.logo.data:
+                logo_url = upload_file_to_storage(form.logo.data, "patrocinadores")
+                if logo_url:
+                    # Eliminar logo anterior si existe
+                    if tema.logo_patrocinador_path:
+                        # TODO: Implementar eliminación de archivo anterior
+                        pass
+                    tema.logo_patrocinador_path = logo_url
+                    flash('Logo del patrocinador subido correctamente', 'success')
+                else:
+                    flash('Error subiendo el logo, pero la información se guardó', 'warning')
             
             db.session.commit()
             flash('Información de patrocinador actualizada correctamente', 'success')
@@ -330,30 +374,25 @@ def subir_documento(id):
         return redirect(url_for('temas.ver_tema', id=tema.id))
     
     # Verificar si los uploads están habilitados
-    if not current_app.config.get('UPLOADS_ENABLED', False):
-        flash('La carga de archivos no está disponible en la versión de demostración. Esta función requiere un servicio de almacenamiento externo.', 'warning')
+    if not current_app.config.get('UPLOADS_ENABLED'):
+        flash('La carga de archivos no está disponible. Configure Cloudinary para habilitarla.', 'warning')
         return redirect(url_for('temas.ver_tema', id=tema.id))
     
     form = DocumentoForm()
     if form.validate_on_submit():
         try:
-            # Guardar archivo
+            # Subir archivo
             file = form.documento.data
-            filename = secure_filename(file.filename)
-            filename = f"tema_{tema.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+            file_url = upload_file_to_storage(file, "documentos")
             
-            upload_folder = current_app.config.get('UPLOAD_FOLDER')
-            if upload_folder and os.path.exists(upload_folder):
-                filepath = os.path.join(upload_folder, filename)
-                file.save(filepath)
-                
+            if file_url:
                 # Determinar tipo de archivo
-                extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
                 
                 documento = Documento(
                     nombre=form.nombre.data,
                     descripcion=form.descripcion.data,
-                    path=filename,
+                    path=file_url,
                     tipo=extension,
                     tema_id=tema.id,
                     usuario_id=current_user.id
@@ -375,7 +414,8 @@ def subir_documento(id):
                 
                 flash('Documento subido correctamente', 'success')
             else:
-                flash('Error: el directorio de carga no está disponible', 'danger')
+                flash('Error al subir el documento', 'danger')
+                
         except Exception as e:
             db.session.rollback()
             print(f"Error subiendo documento: {str(e)}")
