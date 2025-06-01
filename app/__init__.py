@@ -17,11 +17,12 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Crear directorio de uploads si no existe
-    upload_folder = app.config.get('UPLOAD_FOLDER')
-    if upload_folder:
-        os.makedirs(upload_folder, exist_ok=True)
-        print(f"📁 Upload folder asegurado: {upload_folder}")
+    # Crear directorio de uploads si no existe y no estamos en Render
+    if not os.environ.get('RENDER'):
+        upload_folder = app.config.get('UPLOAD_FOLDER')
+        if upload_folder:
+            os.makedirs(upload_folder, exist_ok=True)
+            print(f"📁 Upload folder asegurado: {upload_folder}")
     
     # Configuración especial para SQLAlchemy en producción
     if os.environ.get('RENDER'):
@@ -37,11 +38,24 @@ def create_app(config_class=Config):
     csrf.init_app(app)
     mail.init_app(app)
     
-    # Inicializar SocketIO con configuración simple
-    socketio.init_app(app, 
-                     cors_allowed_origins="*",
-                     async_mode='threading',
-                     logger=True)
+    # Configuración mejorada de SocketIO para Render
+    if os.environ.get('RENDER'):
+        # Configuración específica para Render
+        socketio.init_app(app, 
+                         cors_allowed_origins="*",
+                         async_mode='threading',
+                         logger=False,
+                         engineio_logger=False,
+                         transports=['polling', 'websocket'])
+        print("🔌 SocketIO configurado para Render")
+    else:
+        # Configuración para desarrollo local
+        socketio.init_app(app, 
+                         cors_allowed_origins="*",
+                         async_mode='threading',
+                         logger=True,
+                         engineio_logger=True)
+        print("🔌 SocketIO configurado para desarrollo")
     
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
@@ -75,5 +89,10 @@ def create_app(config_class=Config):
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         db.session.remove()
+    
+    # Mostrar estado de configuración
+    print(f"🌐 Aplicación inicializada")
+    print(f"📊 Base de datos: {'PostgreSQL' if 'postgresql' in app.config.get('SQLALCHEMY_DATABASE_URI', '') else 'SQLite'}")
+    print(f"📁 Uploads habilitados: {app.config.get('UPLOADS_ENABLED', False)}")
     
     return app
