@@ -18,19 +18,31 @@ class Config:
         'max_overflow': 20,
     }
     
-    # Configuración de carga de archivos - DESHABILITADA EN RENDER
+    # CLOUDINARY - Para almacenar archivos e imágenes
+    CLOUDINARY_ENABLED = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+    
+    # Configuración de carga de archivos
     if os.environ.get('RENDER'):
-        # En Render, NO se pueden guardar archivos
+        # En Render, usar Cloudinary
         UPLOAD_FOLDER = None
-        UPLOADS_ENABLED = False
-        MAX_CONTENT_LENGTH = 1 * 1024 * 1024  # 1 MB max (solo para evitar grandes uploads)
+        UPLOADS_ENABLED = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
+        MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
+        USE_CLOUDINARY = True
     else:
-        # Solo en desarrollo local
+        # En desarrollo local, usar filesystem local
         UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
         UPLOADS_ENABLED = True
         MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
+        USE_CLOUDINARY = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
     
-    # Configuración de correo (para producción)
+    # RESEND - Para envío de emails
+    RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+    RESEND_FROM_EMAIL = os.environ.get('RESEND_FROM_EMAIL', 'Comisiones Marinas <noreply@tudominio.com>')
+    
+    # Configuración de correo (fallback)
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
