@@ -31,6 +31,11 @@ class Config:
         UPLOADS_ENABLED = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
         MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
         USE_CLOUDINARY = True
+        
+        # Mostrar información clara sobre uploads
+        if not UPLOADS_ENABLED:
+            print("⚠️  UPLOADS DESHABILITADOS: Configure Cloudinary para habilitar carga de archivos")
+            print("   Variables necesarias: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET")
     else:
         # En desarrollo local, usar filesystem local
         UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app/static/uploads')
@@ -70,3 +75,9 @@ class Config:
             'max_overflow': 10,
             'pool_timeout': 30,
         }
+        
+        # Configuración de SocketIO para Render
+        SOCKETIO_ASYNC_MODE = 'threading'
+        SOCKETIO_CORS_ALLOWED_ORIGINS = "*"
+        SOCKETIO_LOGGER = False
+        SOCKETIO_ENGINEIO_LOGGER = False
