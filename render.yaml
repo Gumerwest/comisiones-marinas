@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: comisiones-marinas
+    name: comisiones-marinas-prod
     runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python init_db.py && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --threads 1 --timeout 120"
+    startCommand: "python init_db.py && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120 --worker-class eventlet"
     envVars:
       - key: FLASK_APP
         value: run.py
@@ -13,7 +13,7 @@ services:
         generateValue: true
       - key: DATABASE_URL
         fromDatabase:
-          name: comisiones-db
+          name: comisiones-db-prod
           property: connectionString
       - key: ADMIN_EMAIL
         value: admin@comisionesmarinas.es
@@ -26,12 +26,24 @@ services:
       - key: PYTHONPATH
         value: /opt/render/project/src
       - key: WEB_CONCURRENCY
-        value: "1"
-    plan: free
+        value: "2"
+      # CLOUDINARY - Para archivos e imágenes
+      - key: CLOUDINARY_CLOUD_NAME
+        value: # DEBES PONER TU CLOUD NAME AQUÍ
+      - key: CLOUDINARY_API_KEY
+        value: # DEBES PONER TU API KEY AQUÍ
+      - key: CLOUDINARY_API_SECRET
+        value: # DEBES PONER TU API SECRET AQUÍ
+      # RESEND - Para emails
+      - key: RESEND_API_KEY
+        value: # DEBES PONER TU RESEND API KEY AQUÍ
+      - key: RESEND_FROM_EMAIL
+        value: "Comisiones Marinas <noreply@comisionesmarinas.es>"
+    plan: starter # PLAN RECOMENDADO PARA PRODUCCIÓN
     healthCheckPath: /health
 
 databases:
-  - name: comisiones-db
-    databaseName: comisiones_db
-    user: comisiones_user
-    plan: free
+  - name: comisiones-db-prod
+    databaseName: comisiones_prod
+    user: comisiones_user_prod
+    plan: starter # PLAN RECOMENDADO PARA PRODUCCIÓN
