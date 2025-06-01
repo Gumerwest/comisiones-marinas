@@ -3,7 +3,7 @@ services:
     name: comisiones-marinas-prod
     runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python init_db.py && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120 --worker-class eventlet"
+    startCommand: "python init_db.py && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 --worker-class eventlet"
     envVars:
       - key: FLASK_APP
         value: run.py
@@ -26,24 +26,24 @@ services:
       - key: PYTHONPATH
         value: /opt/render/project/src
       - key: WEB_CONCURRENCY
-        value: "2"
-      # CLOUDINARY - Con tus datos reales
+        value: "1"
+      # CLOUDINARY - Con la configuración corregida
       - key: CLOUDINARY_CLOUD_NAME
         value: dme0c3e49
       - key: CLOUDINARY_API_KEY
         value: 832563841778816
       - key: CLOUDINARY_API_SECRET
-        value: ofN6hvae3Mh10yZb_wAO9MBTijU
+        value: ofN6hvae3Mh10yZb_wAO9MBT1jU
       # RESEND - Con tu API key real
       - key: RESEND_API_KEY
         value: re_3WMiQcKv_6Ze96P2s6kbJfYf2cHA3sr5H
       - key: RESEND_FROM_EMAIL
         value: "Comisiones Marinas <noreply@comisionesmarinas.es>"
-    plan: starter # PLAN RECOMENDADO PARA PRODUCCIÓN
+    plan: starter
     healthCheckPath: /health
 
 databases:
   - name: comisiones-db-prod
     databaseName: comisiones_prod
     user: comisiones_user_prod
-    plan: starter # PLAN RECOMENDADO PARA PRODUCCIÓN
+    plan: starter
