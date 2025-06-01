@@ -27,16 +27,16 @@ services:
         value: /opt/render/project/src
       - key: WEB_CONCURRENCY
         value: "2"
-      # CLOUDINARY - Para archivos e imágenes
+      # CLOUDINARY - Con tus datos reales
       - key: CLOUDINARY_CLOUD_NAME
-        value: # DEBES PONER TU CLOUD NAME AQUÍ
+        value: dme0c3e49
       - key: CLOUDINARY_API_KEY
-        value: # DEBES PONER TU API KEY AQUÍ
+        value: 832563841778816
       - key: CLOUDINARY_API_SECRET
-        value: # DEBES PONER TU API SECRET AQUÍ
-      # RESEND - Para emails
+        value: ofN6hvae3Mh10yZb_wAO9MBTijU
+      # RESEND - Con tu API key real
       - key: RESEND_API_KEY
-        value: # DEBES PONER TU RESEND API KEY AQUÍ
+        value: re_3WMiQcKv_6Ze96P2s6kbJfYf2cHA3sr5H
       - key: RESEND_FROM_EMAIL
         value: "Comisiones Marinas <noreply@comisionesmarinas.es>"
     plan: starter # PLAN RECOMENDADO PARA PRODUCCIÓN
