@@ -4,27 +4,38 @@ from app import socketio, db
 from app.models import MensajeChat, Tema, Comision
 from datetime import datetime
 import traceback
+import os
+
+# Configuración específica para diferentes entornos
+IS_RENDER = os.environ.get('RENDER')
 
 @socketio.on('connect')
 def handle_connect():
     try:
         if current_user.is_authenticated:
-            print(f"Usuario conectado: {current_user.email}")
-            emit('connected', {'user_id': current_user.id})
+            print(f"✅ Usuario conectado: {current_user.email}")
+            emit('connected', {
+                'user_id': current_user.id,
+                'status': 'connected',
+                'timestamp': datetime.utcnow().isoformat()
+            })
         else:
-            print("Usuario no autenticado intentó conectarse")
+            print("❌ Usuario no autenticado intentó conectarse")
+            emit('error', {'message': 'No autenticado'})
             disconnect()
     except Exception as e:
-        print(f"Error en connect: {str(e)}")
-        traceback.print_exc()
+        print(f"❌ Error en connect: {str(e)}")
+        if not IS_RENDER:  # Solo imprimir traceback en desarrollo
+            traceback.print_exc()
+        emit('error', {'message': 'Error de conexión'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
     try:
         if current_user.is_authenticated:
-            print(f"Usuario desconectado: {current_user.email}")
+            print(f"👋 Usuario desconectado: {current_user.email}")
     except Exception as e:
-        print(f"Error en disconnect: {str(e)}")
+        print(f"⚠️ Error en disconnect: {str(e)}")
 
 @socketio.on('join_comision')
 def handle_join_comision(data):
@@ -38,18 +49,23 @@ def handle_join_comision(data):
             emit('error', {'message': 'ID de comisión requerido'})
             return
             
-        # Verificar que el usuario es miembro de la comisión
+        # Verificar permisos
         if current_user.es_miembro_de(comision_id) or current_user.rol == 'admin':
             room = f'comision_{comision_id}'
             join_room(room)
-            print(f"Usuario {current_user.email} se unió a {room}")
-            emit('joined_room', {'room': room})
+            print(f"🏠 Usuario {current_user.email} se unió a {room}")
+            emit('joined_room', {
+                'room': room,
+                'type': 'comision',
+                'id': comision_id
+            })
         else:
             emit('error', {'message': 'No es miembro de esta comisión'})
             
     except Exception as e:
-        print(f"Error en join_comision: {str(e)}")
-        traceback.print_exc()
+        print(f"❌ Error en join_comision: {str(e)}")
+        if not IS_RENDER:
+            traceback.print_exc()
         emit('error', {'message': 'Error al unirse a la comisión'})
 
 @socketio.on('leave_comision')
@@ -60,8 +76,9 @@ def handle_leave_comision(data):
             room = f'comision_{comision_id}'
             leave_room(room)
             emit('left_room', {'room': room})
+            print(f"🚪 Usuario salió de {room}")
     except Exception as e:
-        print(f"Error en leave_comision: {str(e)}")
+        print(f"⚠️ Error en leave_comision: {str(e)}")
 
 @socketio.on('join_tema')
 def handle_join_tema(data):
@@ -80,18 +97,23 @@ def handle_join_tema(data):
             emit('error', {'message': 'Tema no encontrado'})
             return
             
-        # Verificar que el usuario es miembro de la comisión del tema
+        # Verificar permisos
         if current_user.es_miembro_de(tema.comision_id) or current_user.rol == 'admin':
             room = f'tema_{tema_id}'
             join_room(room)
-            print(f"Usuario {current_user.email} se unió a {room}")
-            emit('joined_room', {'room': room})
+            print(f"💡 Usuario {current_user.email} se unió a {room}")
+            emit('joined_room', {
+                'room': room,
+                'type': 'tema',
+                'id': tema_id
+            })
         else:
             emit('error', {'message': 'No es miembro de esta comisión'})
             
     except Exception as e:
-        print(f"Error en join_tema: {str(e)}")
-        traceback.print_exc()
+        print(f"❌ Error en join_tema: {str(e)}")
+        if not IS_RENDER:
+            traceback.print_exc()
         emit('error', {'message': 'Error al unirse al tema'})
 
 @socketio.on('leave_tema')
@@ -102,8 +124,9 @@ def handle_leave_tema(data):
             room = f'tema_{tema_id}'
             leave_room(room)
             emit('left_room', {'room': room})
+            print(f"🚪 Usuario salió de {room}")
     except Exception as e:
-        print(f"Error en leave_tema: {str(e)}")
+        print(f"⚠️ Error en leave_tema: {str(e)}")
 
 @socketio.on('send_message_comision')
 def handle_message_comision(data):
@@ -124,6 +147,11 @@ def handle_message_comision(data):
             emit('error', {'message': 'Sin permisos'})
             return
         
+        # Limitar longitud del mensaje
+        if len(mensaje_texto) > 1000:
+            emit('error', {'message': 'Mensaje demasiado largo (máximo 1000 caracteres)'})
+            return
+        
         # Guardar mensaje en la base de datos
         mensaje = MensajeChat(
             contenido=mensaje_texto,
@@ -140,18 +168,21 @@ def handle_message_comision(data):
             'usuario': {
                 'id': current_user.id,
                 'nombre': current_user.nombre,
-                'apellidos': current_user.apellidos
+                'apellidos': current_user.apellidos,
+                'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
             },
             'mensaje': mensaje_texto,
-            'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M')
+            'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
+            'timestamp': mensaje.fecha.isoformat()
         }
         
         socketio.emit('new_message_comision', message_data, room=room)
-        print(f"Mensaje enviado a {room}: {mensaje_texto[:50]}...")
+        print(f"📨 Mensaje enviado a {room}: {mensaje_texto[:50]}...")
         
     except Exception as e:
-        print(f"Error en send_message_comision: {str(e)}")
-        traceback.print_exc()
+        print(f"❌ Error en send_message_comision: {str(e)}")
+        if not IS_RENDER:
+            traceback.print_exc()
         db.session.rollback()
         emit('error', {'message': 'Error enviando mensaje'})
 
@@ -179,6 +210,11 @@ def handle_message_tema(data):
             emit('error', {'message': 'Sin permisos'})
             return
         
+        # Limitar longitud del mensaje
+        if len(mensaje_texto) > 1000:
+            emit('error', {'message': 'Mensaje demasiado largo (máximo 1000 caracteres)'})
+            return
+        
         # Guardar mensaje en la base de datos
         mensaje = MensajeChat(
             contenido=mensaje_texto,
@@ -195,18 +231,21 @@ def handle_message_tema(data):
             'usuario': {
                 'id': current_user.id,
                 'nombre': current_user.nombre,
-                'apellidos': current_user.apellidos
+                'apellidos': current_user.apellidos,
+                'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
             },
             'mensaje': mensaje_texto,
-            'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M')
+            'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
+            'timestamp': mensaje.fecha.isoformat()
         }
         
         socketio.emit('new_message_tema', message_data, room=room)
-        print(f"Mensaje enviado a {room}: {mensaje_texto[:50]}...")
+        print(f"💬 Mensaje enviado a {room}: {mensaje_texto[:50]}...")
         
     except Exception as e:
-        print(f"Error en send_message_tema: {str(e)}")
-        traceback.print_exc()
+        print(f"❌ Error en send_message_tema: {str(e)}")
+        if not IS_RENDER:
+            traceback.print_exc()
         db.session.rollback()
         emit('error', {'message': 'Error enviando mensaje'})
 
@@ -240,22 +279,26 @@ def handle_get_messages_comision(data):
             'usuario': {
                 'id': m.usuario.id,
                 'nombre': m.usuario.nombre,
-                'apellidos': m.usuario.apellidos
+                'apellidos': m.usuario.apellidos,
+                'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
             },
             'mensaje': m.contenido,
-            'fecha': m.fecha.strftime('%d/%m/%Y %H:%M')
+            'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
+            'timestamp': m.fecha.isoformat()
         } for m in reversed(mensajes)]
         
         emit('messages_comision', {
             'comision_id': comision_id,
-            'mensajes': mensajes_data
+            'mensajes': mensajes_data,
+            'total': len(mensajes_data)
         })
         
-        print(f"Enviados {len(mensajes_data)} mensajes de comisión {comision_id}")
+        print(f"📥 Enviados {len(mensajes_data)} mensajes de comisión {comision_id}")
         
     except Exception as e:
-        print(f"Error en get_messages_comision: {str(e)}")
-        traceback.print_exc()
+        print(f"❌ Error en get_messages_comision: {str(e)}")
+        if not IS_RENDER:
+            traceback.print_exc()
         emit('error', {'message': 'Error obteniendo mensajes'})
 
 @socketio.on('get_messages_tema')
@@ -293,26 +336,39 @@ def handle_get_messages_tema(data):
             'usuario': {
                 'id': m.usuario.id,
                 'nombre': m.usuario.nombre,
-                'apellidos': m.usuario.apellidos
+                'apellidos': m.usuario.apellidos,
+                'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
             },
             'mensaje': m.contenido,
-            'fecha': m.fecha.strftime('%d/%m/%Y %H:%M')
+            'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
+            'timestamp': m.fecha.isoformat()
         } for m in reversed(mensajes)]
         
         emit('messages_tema', {
             'tema_id': tema_id,
-            'mensajes': mensajes_data
+            'mensajes': mensajes_data,
+            'total': len(mensajes_data)
         })
         
-        print(f"Enviados {len(mensajes_data)} mensajes de tema {tema_id}")
+        print(f"📥 Enviados {len(mensajes_data)} mensajes de tema {tema_id}")
         
     except Exception as e:
-        print(f"Error en get_messages_tema: {str(e)}")
-        traceback.print_exc()
+        print(f"❌ Error en get_messages_tema: {str(e)}")
+        if not IS_RENDER:
+            traceback.print_exc()
         emit('error', {'message': 'Error obteniendo mensajes'})
+
+@socketio.on('ping')
+def handle_ping():
+    """Responder a ping para mantener conexión activa"""
+    try:
+        emit('pong', {'timestamp': datetime.utcnow().isoformat()})
+    except Exception as e:
+        print(f"⚠️ Error en ping: {str(e)}")
 
 @socketio.on_error_default
 def default_error_handler(e):
-    print(f"Error de SocketIO: {str(e)}")
-    traceback.print_exc()
-    emit('error', {'message': 'Error del servidor'})
+    print(f"❌ Error general de SocketIO: {str(e)}")
+    if not IS_RENDER:
+        traceback.print_exc()
+    emit('error', {'message': 'Error del servidor de chat'})
