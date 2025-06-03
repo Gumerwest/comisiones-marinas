@@ -72,14 +72,25 @@
                 
                 <!-- Imagen o placeholder -->
                 {% if comision.imagen_path %}
-                <div class="comision-image">
-                    <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" 
-                         alt="{{ comision.nombre }}">
-                </div>
+                    {% if 'cloudinary.com' in comision.imagen_path or comision.imagen_path.startswith('http') %}
+                        <div class="comision-image">
+                            <img src="{{ comision.imagen_path }}" 
+                                 alt="{{ comision.nombre }}">
+                        </div>
+                    {% elif config.UPLOAD_FOLDER %}
+                        <div class="comision-image">
+                            <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" 
+                                 alt="{{ comision.nombre }}">
+                        </div>
+                    {% else %}
+                        <div class="comision-image placeholder">
+                            <i class="fas fa-ship fa-3x"></i>
+                        </div>
+                    {% endif %}
                 {% else %}
-                <div class="comision-image placeholder">
-                    <i class="fas fa-ship fa-3x"></i>
-                </div>
+                    <div class="comision-image placeholder">
+                        <i class="fas fa-ship fa-3x"></i>
+                    </div>
                 {% endif %}
                 
                 <!-- Contenido -->
