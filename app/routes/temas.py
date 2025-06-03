@@ -43,11 +43,12 @@ def upload_file_to_storage(file, folder="documentos"):
             result = cloudinary.uploader.upload(
                 file,
                 folder=folder,
-                public_id=f"{folder}/{timestamp}_{original_filename}",
+                public_id=f"{timestamp}_{original_filename}",
                 resource_type="auto",
                 overwrite=False
             )
             print(f"✅ Archivo subido a Cloudinary: {result['public_id']}")
+            # IMPORTANTE: Devolver la URL completa, no solo el public_id
             return result['secure_url']
         except Exception as e:
             print(f"❌ Error subiendo a Cloudinary: {str(e)}")
@@ -242,14 +243,24 @@ def aprobar_tema(id):
     
     # Notificar a los miembros
     try:
-        from app.utils.email import notify_members_of_commission
-        notify_members_of_commission(comision.id, 'nuevo_tema', {
+        # Primero intentar con Resend
+        from app.utils.resend_email import notify_members_of_commission_resend
+        notify_members_of_commission_resend(comision.id, 'nuevo_tema', {
             'comision_nombre': comision.nombre,
             'tema_titulo': tema.titulo,
             'tema_resumen': tema.resumen
         })
     except:
-        pass
+        # Si falla, intentar con el sistema de email tradicional
+        try:
+            from app.utils.email import notify_members_of_commission
+            notify_members_of_commission(comision.id, 'nuevo_tema', {
+                'comision_nombre': comision.nombre,
+                'tema_titulo': tema.titulo,
+                'tema_resumen': tema.resumen
+            })
+        except:
+            pass
     
     flash('Tema aprobado correctamente', 'success')
     return redirect(url_for('temas.ver_tema', id=tema.id))
@@ -349,14 +360,24 @@ def comentar(id):
         
         # Notificar a los miembros
         try:
-            from app.utils.email import notify_members_of_commission
-            notify_members_of_commission(comision.id, 'nuevo_comentario', {
+            # Primero intentar con Resend
+            from app.utils.resend_email import notify_members_of_commission_resend
+            notify_members_of_commission_resend(comision.id, 'nuevo_comentario', {
                 'tema_titulo': tema.titulo,
                 'comentario_autor': f"{current_user.nombre} {current_user.apellidos}",
                 'comentario_texto': form.contenido.data
             })
         except:
-            pass
+            # Si falla, intentar con el sistema de email tradicional
+            try:
+                from app.utils.email import notify_members_of_commission
+                notify_members_of_commission(comision.id, 'nuevo_comentario', {
+                    'tema_titulo': tema.titulo,
+                    'comentario_autor': f"{current_user.nombre} {current_user.apellidos}",
+                    'comentario_texto': form.contenido.data
+                })
+            except:
+                pass
         
         flash('Comentario añadido correctamente', 'success')
     
@@ -402,15 +423,26 @@ def subir_documento(id):
                 
                 # Notificar a los miembros
                 try:
-                    from app.utils.email import notify_members_of_commission
-                    notify_members_of_commission(comision.id, 'nuevo_documento', {
+                    # Primero intentar con Resend
+                    from app.utils.resend_email import notify_members_of_commission_resend
+                    notify_members_of_commission_resend(comision.id, 'nuevo_documento', {
                         'tema_titulo': tema.titulo,
                         'documento_nombre': documento.nombre,
                         'documento_descripcion': documento.descripcion,
                         'documento_autor': f"{current_user.nombre} {current_user.apellidos}"
                     })
                 except:
-                    pass
+                    # Si falla, intentar con el sistema de email tradicional
+                    try:
+                        from app.utils.email import notify_members_of_commission
+                        notify_members_of_commission(comision.id, 'nuevo_documento', {
+                            'tema_titulo': tema.titulo,
+                            'documento_nombre': documento.nombre,
+                            'documento_descripcion': documento.descripcion,
+                            'documento_autor': f"{current_user.nombre} {current_user.apellidos}"
+                        })
+                    except:
+                        pass
                 
                 flash('Documento subido correctamente', 'success')
             else:
@@ -474,15 +506,26 @@ def aprobar_reunion(id):
     
     # Notificar a los miembros
     try:
-        from app.utils.email import notify_members_of_commission
-        notify_members_of_commission(comision.id, 'nueva_reunion', {
+        # Primero intentar con Resend
+        from app.utils.resend_email import notify_members_of_commission_resend
+        notify_members_of_commission_resend(comision.id, 'nueva_reunion', {
             'tema_titulo': tema.titulo,
             'reunion_titulo': reunion.titulo,
             'reunion_fecha': reunion.fecha.strftime('%d/%m/%Y %H:%M'),
             'reunion_lugar': reunion.lugar or 'Virtual'
         })
     except:
-        pass
+        # Si falla, intentar con el sistema de email tradicional
+        try:
+            from app.utils.email import notify_members_of_commission
+            notify_members_of_commission(comision.id, 'nueva_reunion', {
+                'tema_titulo': tema.titulo,
+                'reunion_titulo': reunion.titulo,
+                'reunion_fecha': reunion.fecha.strftime('%d/%m/%Y %H:%M'),
+                'reunion_lugar': reunion.lugar or 'Virtual'
+            })
+        except:
+            pass
     
     flash('Reunión aprobada correctamente', 'success')
     return redirect(url_for('temas.ver_tema', id=tema.id))
