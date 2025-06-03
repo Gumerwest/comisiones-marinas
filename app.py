@@ -11,7 +11,7 @@ from wtforms.validators import DataRequired, Email
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mi-clave-secreta-123'  # Cambia por una clave única
+app.config['SECRET_KEY'] = 'comisiones-marinas-secure-key-2025-jun-03'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -23,9 +23,7 @@ login_manager.login_view = 'login'
 socketio = SocketIO(app, 
                     cors_allowed_origins="*",
                     async_mode='eventlet',
-                    message_queue='redis://your-internal-url:6379/0')
-
-# Reemplaza 'redis://your-internal-url:6379/0' con la Internal URL de Key Value
+                    message_queue='redis://red-d0vichggjchc7386t3rg:6379/0')
 
 # Modelo de usuario
 class User(db.Model, UserMixin):
