@@ -1,7 +1,7 @@
 import os
 import sqlite3
 from datetime import datetime
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from flask_sqlalchemy import SQLAlchemy
@@ -19,11 +19,13 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Configurar Socket.IO con Key Value (Redis) para sesiones
+# Configurar Socket.IO con Redis y soporte para WebSocket
 socketio = SocketIO(app, 
                     cors_allowed_origins="*",
                     async_mode='eventlet',
-                    message_queue='redis://red-d0vichggjchc7386t3rg:6379/0')
+                    message_queue='redis://red-d0vichggjchc7386t3rg:6379/0',
+                    transports=['websocket', 'polling'],  # Permitir WebSocket primero
+                    allow_upgrades=True)  # Permitir upgrade a WebSocket
 
 # Modelo de usuario
 class User(db.Model, UserMixin):
@@ -122,7 +124,17 @@ def comisiones():
 @app.route('/comisiones/<int:id>')
 @login_required
 def comision(id):
-    return render_template('comision.html', comision_id=id)
+    messages = get_messages(f'comision_{id}')
+    return render_template('comision.html', comision_id=id, messages=messages)
+
+@app.route('/comisiones/crear', methods=['GET', 'POST'])
+@login_required
+def crear_comision():
+    if request.method == 'POST':
+        # Aquí iría tu lógica para crear una nueva comisión
+        # Por ahora, simulamos un éxito
+        return redirect(url_for('comision', id=1))
+    return render_template('comision_crear.html')
 
 @app.route('/temas/<int:id>')
 @login_required
@@ -130,15 +142,41 @@ def tema(id):
     messages = get_messages(f'tema_{id}')
     return render_template('tema.html', tema_id=id, messages=messages)
 
+@app.route('/temas/crear/<int:comision_id>', methods=['GET', 'POST'])
+@login_required
+def crear_tema(comision_id):
+    if request.method == 'POST':
+        # Aquí iría tu lógica para crear un nuevo tema
+        # Por ahora, simulamos un éxito
+        return redirect(url_for('comision', id=comision_id))
+    return render_template('tema_crear.html', comision_id=comision_id)
+
+@app.route('/admin/')
+@login_required
+def admin():
+    return render_template('admin.html')
+
+@app.route('/admin/temas')
+@login_required
+def admin_temas():
+    return render_template('admin_temas.html')
+
+@app.route('/temas/<int:id>/aprobar', methods=['POST'])
+@login_required
+def aprobar_tema(id):
+    # Aquí iría tu lógica para aprobar un tema
+    # Por ahora, simulamos un éxito
+    return redirect(url_for('tema', id=id))
+
 # Eventos de Socket.IO
 @socketio.on('connect')
 def handle_connect():
-    print(f'Usuario conectado: {request.sid}')
+    print(f'Usuario conectado: {current_user.email if current_user.is_authenticated else "Anónimo"}')
     emit('server_message', {'msg': 'Conexión establecida'})
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print(f'Usuario desconectado: {request.sid}')
+    print(f'Usuario desconectado: {current_user.email if current_user.is_authenticated else "Anónimo"}')
 
 @socketio.on('join')
 def on_join(data):
@@ -171,4 +209,4 @@ def create_app():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
-    socketio.run(app, host='0.0.0.0', port=port)
+    socketio.run(app, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
