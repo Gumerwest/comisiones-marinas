@@ -33,12 +33,18 @@
             </div>
             <div class="col-md-4 text-md-end">
                 {% if comision.imagen_path %}
-                <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" 
-                     alt="{{ comision.nombre }}" class="img-fluid rounded shadow" style="max-height: 200px;">
+                    {% if 'cloudinary.com' in comision.imagen_path or comision.imagen_path.startswith('http') %}
+                        <img src="{{ comision.imagen_path }}" 
+                             alt="{{ comision.nombre }}" class="img-fluid rounded shadow" style="max-height: 200px;">
+                    {% else %}
+                        <!-- Fallback para desarrollo local -->
+                        <img src="{{ url_for('static', filename='uploads/' + comision.imagen_path) }}" 
+                             alt="{{ comision.nombre }}" class="img-fluid rounded shadow" style="max-height: 200px;">
+                    {% endif %}
                 {% else %}
-                <div class="placeholder-image rounded shadow p-5 text-center bg-light">
-                    <i class="fas fa-ship fa-4x text-muted"></i>
-                </div>
+                    <div class="placeholder-image rounded shadow p-5 text-center bg-light">
+                        <i class="fas fa-ship fa-4x text-muted"></i>
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -306,10 +312,16 @@
                             </div>
                             <div class="documento-info">
                                 <h6 class="mb-1">
-                                    <a href="{{ url_for('static', filename='uploads/' + doc.path) }}" 
-                                       target="_blank" class="text-decoration-none">
-                                        {{ doc.nombre }}
-                                    </a>
+                                    {% if doc.path.startswith('http') %}
+                                        <a href="{{ doc.path }}" target="_blank" class="text-decoration-none">
+                                            {{ doc.nombre }}
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('static', filename='uploads/' + doc.path) }}" 
+                                           target="_blank" class="text-decoration-none">
+                                            {{ doc.nombre }}
+                                        </a>
+                                    {% endif %}
                                 </h6>
                                 {% if doc.descripcion %}
                                 <p class="text-muted small mb-1">{{ doc.descripcion }}</p>
@@ -474,7 +486,7 @@
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Nota:</strong> La carga de archivos no está disponible en la versión de demostración.
-                        En producción, se recomienda usar un servicio de almacenamiento externo como AWS S3.
+                        Configure las variables de entorno de Cloudinary para habilitarla.
                     </div>
                     {% endif %}
                     <div class="mb-3">
