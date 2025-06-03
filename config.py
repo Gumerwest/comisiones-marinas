@@ -76,8 +76,21 @@ class Config:
             'pool_timeout': 30,
         }
         
-        # Configuración de SocketIO para Render
+        # Configuración mejorada de SocketIO para Render
         SOCKETIO_ASYNC_MODE = 'threading'
-        SOCKETIO_CORS_ALLOWED_ORIGINS = "*"
-        SOCKETIO_LOGGER = False
-        SOCKETIO_ENGINEIO_LOGGER = False
+        SOCKETIO_CORS_ALLOWED_ORIGINS = ["*"]
+        SOCKETIO_LOGGER = False  # Desactivado para producción
+        SOCKETIO_ENGINEIO_LOGGER = False  # Desactivado para producción
+        SOCKETIO_PING_TIMEOUT = 60
+        SOCKETIO_PING_INTERVAL = 25
+        # Forzar polling en Render ya que WebSockets pueden ser problemáticos
+        SOCKETIO_TRANSPORTS = ['polling']
+    else:
+        # Configuración para desarrollo local
+        SOCKETIO_ASYNC_MODE = 'threading'
+        SOCKETIO_CORS_ALLOWED_ORIGINS = ["*"]
+        SOCKETIO_LOGGER = True
+        SOCKETIO_ENGINEIO_LOGGER = True
+        SOCKETIO_PING_TIMEOUT = 30
+        SOCKETIO_PING_INTERVAL = 15
+        SOCKETIO_TRANSPORTS = ['polling', 'websocket']
