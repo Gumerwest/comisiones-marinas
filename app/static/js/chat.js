@@ -42,7 +42,14 @@ window.chatManager = {
                 pingInterval: 25000
             };
             
-            socket = io(socketOptions);
+            // Obtener la URL base correcta
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+            const socketUrl = `${protocol}//${host}`;
+            
+            console.log(`🔗 Conectando a: ${socketUrl}`);
+            
+            socket = io(socketUrl, socketOptions);
             console.log("✅ Socket inicializado con configuración para Render");
         } catch (error) {
             console.error("❌ Error inicializando socket:", error);
@@ -460,15 +467,30 @@ window.chatManager = {
 document.addEventListener('DOMContentLoaded', function() {
     const messagesDiv = document.getElementById('chat-messages');
     if (messagesDiv) {
-        // Dar tiempo para que se carguen las librerías
-        setTimeout(() => {
-            try {
-                window.chatManager.init();
-            } catch (error) {
-                console.error('❌ Error inicializando chat:', error);
-                window.chatManager.showError('Error inicializando chat');
+        // Verificar que Socket.IO esté disponible
+        const checkSocketIO = setInterval(() => {
+            if (typeof io !== 'undefined') {
+                clearInterval(checkSocketIO);
+                console.log('✅ Socket.IO cargado, inicializando chat...');
+                try {
+                    window.chatManager.init();
+                } catch (error) {
+                    console.error('❌ Error inicializando chat:', error);
+                    window.chatManager.showError('Error inicializando chat');
+                }
+            } else {
+                console.log('⏳ Esperando que Socket.IO se cargue...');
             }
-        }, 2000); // Aumentar delay para Render
+        }, 500); // Verificar cada 500ms
+        
+        // Timeout después de 10 segundos
+        setTimeout(() => {
+            clearInterval(checkSocketIO);
+            if (typeof io === 'undefined') {
+                console.error('❌ Socket.IO no se pudo cargar después de 10 segundos');
+                window.chatManager.showError('No se pudo cargar el servicio de chat');
+            }
+        }, 10000);
     }
 });
 
