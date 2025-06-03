@@ -19,3 +19,4 @@ click==8.1.7
 eventlet==0.33.3
 cloudinary==1.36.0
 requests==2.31.0
+redis==5.0.1  # Añadido para Key Value (Redis)
