@@ -10,6 +10,61 @@ from datetime import datetime
 
 bp = Blueprint('comisiones', __name__)
 
+# Importar la función upload_file_to_storage de temas.py
+def upload_file_to_storage(file, folder="comisiones"):
+    """Subir archivo a Cloudinary o almacenamiento local"""
+    if not file or not file.filename:
+        return None
+    
+    # Si Cloudinary está configurado, usarlo
+    if current_app.config.get('USE_CLOUDINARY'):
+        try:
+            import cloudinary
+            import cloudinary.uploader
+            
+            # Configurar Cloudinary
+            cloudinary.config(
+                cloud_name=current_app.config.get('CLOUDINARY_CLOUD_NAME'),
+                api_key=current_app.config.get('CLOUDINARY_API_KEY'),
+                api_secret=current_app.config.get('CLOUDINARY_API_SECRET'),
+                secure=True
+            )
+            
+            # Generar nombre único
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            original_filename = secure_filename(file.filename)
+            
+            # Subir a Cloudinary
+            result = cloudinary.uploader.upload(
+                file,
+                folder=folder,
+                public_id=f"{timestamp}_{original_filename}",
+                resource_type="auto",
+                overwrite=False
+            )
+            print(f"✅ Archivo subido a Cloudinary: {result['public_id']}")
+            return result['secure_url']  # Devolver URL completa
+        except Exception as e:
+            print(f"❌ Error subiendo a Cloudinary: {str(e)}")
+            return None
+    else:
+        # Usar filesystem local (solo para desarrollo)
+        try:
+            upload_folder = current_app.config.get('UPLOAD_FOLDER')
+            if not upload_folder:
+                return None
+                
+            os.makedirs(upload_folder, exist_ok=True)
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            filename = f"{timestamp}_{secure_filename(file.filename)}"
+            filepath = os.path.join(upload_folder, filename)
+            file.save(filepath)
+            print(f"✅ Archivo guardado localmente: {filename}")
+            return filename
+        except Exception as e:
+            print(f"❌ Error guardando archivo local: {str(e)}")
+            return None
+
 @bp.route('/')
 @login_required
 def listar_comisiones():
@@ -91,25 +146,32 @@ def crear_comision():
                 descripcion=form.descripcion.data
             )
             
-            # Manejo de imagen
+            # Manejo de imagen mejorado para Cloudinary
             if form.imagen.data and current_app.config.get('UPLOADS_ENABLED', False):
                 try:
-                    filename = secure_filename(form.imagen.data.filename)
-                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    
-                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                    if upload_folder and os.path.exists(upload_folder):
-                        os.makedirs(upload_folder, exist_ok=True)
-                        filepath = os.path.join(upload_folder, filename)
-                        form.imagen.data.save(filepath)
-                        comision.imagen_path = filename
+                    if current_app.config.get('USE_CLOUDINARY'):
+                        # Usar Cloudinary
+                        imagen_url = upload_file_to_storage(form.imagen.data, "comisiones")
+                        if imagen_url:
+                            comision.imagen_path = imagen_url  # Guardar URL completa
+                            flash('Imagen subida correctamente a Cloudinary', 'success')
+                        else:
+                            flash('Error subiendo la imagen', 'warning')
                     else:
-                        flash('La carga de imágenes no está disponible en este momento', 'warning')
+                        # Código existente para desarrollo local
+                        filename = secure_filename(form.imagen.data.filename)
+                        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                        upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                        if upload_folder and os.path.exists(upload_folder):
+                            os.makedirs(upload_folder, exist_ok=True)
+                            filepath = os.path.join(upload_folder, filename)
+                            form.imagen.data.save(filepath)
+                            comision.imagen_path = filename
                 except Exception as e:
                     print(f"Error con imagen: {str(e)}")
-                    flash('La imagen no pudo ser guardada, pero la comisión se creará sin imagen', 'warning')
+                    flash('La imagen no pudo ser guardada', 'warning')
             elif form.imagen.data and not current_app.config.get('UPLOADS_ENABLED', False):
-                flash('La carga de imágenes no está disponible en la versión de demostración', 'info')
+                flash('La carga de imágenes no está disponible. Configure Cloudinary para habilitarla.', 'info')
             
             db.session.add(comision)
             db.session.commit()
@@ -193,32 +255,40 @@ def editar_comision(id):
             # Actualizar imagen si se proporciona una nueva
             if form.imagen.data and current_app.config.get('UPLOADS_ENABLED', False):
                 try:
-                    filename = secure_filename(form.imagen.data.filename)
-                    filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    
-                    upload_folder = current_app.config.get('UPLOAD_FOLDER')
-                    if upload_folder and os.path.exists(upload_folder):
-                        os.makedirs(upload_folder, exist_ok=True)
-                        filepath = os.path.join(upload_folder, filename)
-                        form.imagen.data.save(filepath)
-                        
-                        # Eliminar imagen anterior si existe
-                        if comision.imagen_path and upload_folder:
-                            try:
-                                old_path = os.path.join(upload_folder, comision.imagen_path)
-                                if os.path.exists(old_path):
-                                    os.remove(old_path)
-                            except:
-                                pass
-                        
-                        comision.imagen_path = filename
+                    if current_app.config.get('USE_CLOUDINARY'):
+                        # Usar Cloudinary
+                        imagen_url = upload_file_to_storage(form.imagen.data, "comisiones")
+                        if imagen_url:
+                            # TODO: Eliminar imagen anterior de Cloudinary si existe
+                            comision.imagen_path = imagen_url
+                            flash('Imagen actualizada correctamente', 'success')
+                        else:
+                            flash('Error actualizando la imagen', 'warning')
                     else:
-                        flash('La carga de imágenes no está disponible en este momento', 'warning')
+                        # Código existente para desarrollo local
+                        filename = secure_filename(form.imagen.data.filename)
+                        filename = f"{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+                        upload_folder = current_app.config.get('UPLOAD_FOLDER')
+                        if upload_folder and os.path.exists(upload_folder):
+                            os.makedirs(upload_folder, exist_ok=True)
+                            filepath = os.path.join(upload_folder, filename)
+                            form.imagen.data.save(filepath)
+                            
+                            # Eliminar imagen anterior si existe
+                            if comision.imagen_path and upload_folder:
+                                try:
+                                    old_path = os.path.join(upload_folder, comision.imagen_path)
+                                    if os.path.exists(old_path):
+                                        os.remove(old_path)
+                                except:
+                                    pass
+                            
+                            comision.imagen_path = filename
                 except Exception as e:
                     print(f"Error actualizando imagen: {str(e)}")
                     flash('La imagen no pudo ser actualizada', 'warning')
             elif form.imagen.data and not current_app.config.get('UPLOADS_ENABLED', False):
-                flash('La carga de imágenes no está disponible en la versión de demostración', 'info')
+                flash('La carga de imágenes no está disponible. Configure Cloudinary para habilitarla.', 'info')
             
             db.session.commit()
             flash('Comisión actualizada correctamente', 'success')
@@ -301,14 +371,28 @@ def aprobar_miembro(comision_id, usuario_id):
     
     # Notificar al usuario
     try:
-        from app.utils.email import send_notification_email
+        # Primero intentar con Resend
+        from app.utils.resend_email import send_notification_email_resend
         usuario = Usuario.query.get(usuario_id)
         comision = Comision.query.get(comision_id)
-        send_notification_email(usuario, 'membresia_aprobada', {
+        send_notification_email_resend(usuario, 'membresia_aprobada', {
             'comision_nombre': comision.nombre
         })
+        print(f"✅ Email enviado con Resend a {usuario.email}")
     except:
-        pass
+        # Si falla, intentar con el sistema tradicional
+        try:
+            from app.utils.email import send_notification_email
+            usuario = Usuario.query.get(usuario_id)
+            comision = Comision.query.get(comision_id)
+            send_notification_email(usuario, 'membresia_aprobada', {
+                'comision_nombre': comision.nombre
+            })
+            print(f"✅ Email enviado con Flask-Mail a {usuario.email}")
+        except Exception as e:
+            print(f"❌ Error enviando email: {str(e)}")
+            # No bloquear el proceso si falla el email
+            pass
     
     flash('Miembro aprobado correctamente', 'success')
     return redirect(url_for('comisiones.listar_miembros', id=comision_id))
@@ -466,30 +550,24 @@ def subir_documento(id):
     
     # Verificar si los uploads están habilitados
     if not current_app.config.get('UPLOADS_ENABLED', False):
-        flash('La carga de archivos no está disponible en la versión de demostración. Esta función requiere un servicio de almacenamiento externo.', 'warning')
+        flash('La carga de archivos no está disponible. Configure Cloudinary para habilitarla.', 'warning')
         return redirect(url_for('comisiones.ver_comision', id=comision.id) + '#documentacion')
     
     form = DocumentoComisionForm()
     if form.validate_on_submit():
         try:
-            # Guardar archivo
+            # Subir archivo usando la función mejorada
             file = form.documento.data
-            filename = secure_filename(file.filename)
-            filename = f"comision_{comision.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{filename}"
+            file_url = upload_file_to_storage(file, f"comisiones/{comision.id}/documentos")
             
-            upload_folder = current_app.config.get('UPLOAD_FOLDER')
-            if upload_folder and os.path.exists(upload_folder):
-                os.makedirs(upload_folder, exist_ok=True)
-                filepath = os.path.join(upload_folder, filename)
-                file.save(filepath)
-                
+            if file_url:
                 # Determinar tipo de archivo
-                extension = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
                 
                 documento = DocumentoComision(
                     nombre=form.nombre.data,
                     descripcion=form.descripcion.data,
-                    path=filename,
+                    path=file_url,
                     tipo=extension,
                     comision_id=comision.id,
                     usuario_id=current_user.id
@@ -499,7 +577,7 @@ def subir_documento(id):
                 
                 flash('Documento subido correctamente', 'success')
             else:
-                flash('Error: el directorio de carga no está disponible', 'danger')
+                flash('Error al subir el documento', 'danger')
         except Exception as e:
             db.session.rollback()
             print(f"Error subiendo documento: {str(e)}")
