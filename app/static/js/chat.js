@@ -28,9 +28,9 @@ window.chatManager = {
         try {
             // Configuración optimizada para Render
             const socketOptions = {
-                transports: ['polling', 'websocket'],
-                upgrade: true,
-                rememberUpgrade: false, // Forzar polling en Render
+                transports: ['polling'],  // Solo polling para Render
+                upgrade: false,          // No intentar upgrade a websocket
+                rememberUpgrade: false,
                 timeout: 30000,
                 forceNew: true,
                 reconnection: true,
