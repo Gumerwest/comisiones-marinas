@@ -1,4 +1,3 @@
-// Sistema de chat mejorado y más robusto para Render
 let socket = null;
 let currentComisionId = null;
 let currentTemaId = null;
@@ -26,9 +25,8 @@ window.chatManager = {
     initializeSocket: function() {
         try {
             const socketOptions = {
-                transports: ['polling'],
-                upgrade: false,
-                rememberUpgrade: false,
+                transports: ['websocket', 'polling'],  // Priorizar WebSocket
+                upgrade: true,
                 timeout: 30000,
                 forceNew: true,
                 reconnection: true,
@@ -385,11 +383,11 @@ window.chatManager = {
     escapeHtml: function(text) {
         if (!text) return '';
         const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
+            '&': '&',
+            '<': '<',
+            '>': '>',
+            '"': '"',
+            "'": '''
         };
         return text.toString().replace(/[&<>"']/g, m => map[m]);
     },
