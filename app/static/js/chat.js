@@ -11,7 +11,6 @@ window.chatManager = {
     init: function() {
         console.log("🚀 Inicializando sistema de chat...");
         
-        // Verificar si SocketIO está disponible
         if (typeof io === 'undefined') {
             console.error("❌ Socket.IO no está disponible");
             this.showError("Servicio de chat no disponible");
@@ -26,10 +25,9 @@ window.chatManager = {
     
     initializeSocket: function() {
         try {
-            // Configuración optimizada para Render
             const socketOptions = {
-                transports: ['polling'],  // Solo polling para Render
-                upgrade: false,          // No intentar upgrade a websocket
+                transports: ['polling'],
+                upgrade: false,
                 rememberUpgrade: false,
                 timeout: 30000,
                 forceNew: true,
@@ -42,7 +40,6 @@ window.chatManager = {
                 pingInterval: 25000
             };
             
-            // Obtener la URL base correcta
             const protocol = window.location.protocol;
             const host = window.location.host;
             const socketUrl = `${protocol}//${host}`;
@@ -58,7 +55,6 @@ window.chatManager = {
     },
     
     startPingKeepAlive: function() {
-        // Enviar ping cada 20 segundos para mantener conexión activa
         if (pingInterval) {
             clearInterval(pingInterval);
         }
@@ -71,7 +67,6 @@ window.chatManager = {
     },
     
     getContextFromPage: function() {
-        // Obtener IDs de la página actual
         const comisionId = document.body.dataset.comisionId;
         const temaId = document.body.dataset.temaId;
         
@@ -92,16 +87,7 @@ window.chatManager = {
         currentComisionId = id;
         currentTemaId = null;
         
-        socket.emit('join_comision', { comision_id: parseInt(id) });
-        
-        // Solicitar mensajes después de un breve delay
-        setTimeout(() => {
-            socket.emit('get_messages_comision', { 
-                comision_id: parseInt(id),
-                limit: 50,
-                offset: 0
-            });
-        }, 1000);
+        socket.emit('join', { room: `comision_${id}` });
     },
     
     joinTema: function(id) {
@@ -111,16 +97,7 @@ window.chatManager = {
         currentTemaId = id;
         currentComisionId = null;
         
-        socket.emit('join_tema', { tema_id: parseInt(id) });
-        
-        // Solicitar mensajes después de un breve delay
-        setTimeout(() => {
-            socket.emit('get_messages_tema', { 
-                tema_id: parseInt(id),
-                limit: 50,
-                offset: 0
-            });
-        }, 1000);
+        socket.emit('join', { room: `tema_${id}` });
     },
     
     setupEventListeners: function() {
@@ -128,13 +105,11 @@ window.chatManager = {
         
         const self = this;
         
-        // Eventos de conexión
         socket.on('connect', function() {
             console.log('✅ Conectado al servidor de chat');
             reconnectAttempts = 0;
             self.updateConnectionStatus('Conectado', 'success');
             
-            // Reunirse a las salas después de reconectar
             setTimeout(() => {
                 if (currentComisionId) {
                     self.joinComision(currentComisionId);
@@ -149,7 +124,6 @@ window.chatManager = {
             console.log('❌ Desconectado del servidor de chat:', reason);
             self.updateConnectionStatus('Desconectado', 'danger');
             
-            // Intentar reconectar si no fue desconexión manual
             if (reason !== 'io client disconnect' && reason !== 'transport close') {
                 self.attemptReconnect();
             }
@@ -161,49 +135,24 @@ window.chatManager = {
             self.attemptReconnect();
         });
         
-        // Respuesta a ping
         socket.on('pong', function(data) {
             console.log('🏓 Pong recibido');
         });
         
-        // Eventos de mensajes
-        socket.on('new_message_comision', (data) => {
-            console.log('📨 Nuevo mensaje en comisión:', data);
-            self.displayMessage(data);
+        socket.on('server_message', (data) => {
+            console.log('📨 Mensaje del servidor:', data);
+            self.displayMessage({ usuario: { nombre: 'Sistema' }, mensaje: data.msg, fecha: new Date().toISOString() });
         });
         
-        socket.on('new_message_tema', (data) => {
-            console.log('💬 Nuevo mensaje en tema:', data);
-            self.displayMessage(data);
+        socket.on('message', (data) => {
+            console.log('💬 Nuevo mensaje:', data);
+            self.displayMessage({
+                usuario: { nombre: data.username.split('@')[0], apellidos: '', initials: data.username[0] },
+                mensaje: data.message,
+                fecha: new Date().toISOString()
+            });
         });
         
-        socket.on('messages_comision', (data) => {
-            console.log('📥 Mensajes de comisión recibidos:', data.total || 0);
-            self.displayMessages(data);
-        });
-        
-        socket.on('messages_tema', (data) => {
-            console.log('📥 Mensajes de tema recibidos:', data.total || 0);
-            self.displayMessages(data);
-        });
-        
-        // Eventos de sala
-        socket.on('joined_room', (data) => {
-            console.log('🚪 Unido a sala:', data.room);
-            self.updateConnectionStatus(`Conectado (${data.type})`, 'success');
-        });
-        
-        socket.on('left_room', (data) => {
-            console.log('👋 Salió de sala:', data.room);
-        });
-        
-        // Manejo de errores
-        socket.on('error', (data) => {
-            console.error('❌ Error del servidor:', data.message);
-            self.showError(data.message || 'Error del servidor');
-        });
-        
-        // Configurar formulario de chat
         this.setupChatForm();
     },
     
@@ -226,7 +175,6 @@ window.chatManager = {
                 }
             });
             
-            // Limitar longitud del mensaje
             chatInput.addEventListener('input', (e) => {
                 if (e.target.value.length > 1000) {
                     e.target.value = e.target.value.substring(0, 1000);
@@ -256,14 +204,14 @@ window.chatManager = {
         
         try {
             if (currentComisionId) {
-                socket.emit('send_message_comision', {
-                    comision_id: parseInt(currentComisionId),
-                    mensaje: mensaje
+                socket.emit('message', {
+                    room: `comision_${currentComisionId}`,
+                    message: mensaje
                 });
             } else if (currentTemaId) {
-                socket.emit('send_message_tema', {
-                    tema_id: parseInt(currentTemaId),
-                    mensaje: mensaje
+                socket.emit('message', {
+                    room: `tema_${currentTemaId}`,
+                    message: mensaje
                 });
             }
             
@@ -280,21 +228,23 @@ window.chatManager = {
         if (!messagesDiv || !data) return;
         
         const currentUserId = messagesDiv.dataset.currentUserId;
-        const isOwn = String(data.usuario.id) === String(currentUserId);
+        const isOwn = String(data.usuario.nombre) === String(currentUserId);
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${isOwn ? 'own-message' : 'other-message'}`;
         messageDiv.style.animation = 'slideIn 0.3s ease-out';
         
-        const messageTime = data.fecha || new Date().toLocaleTimeString('es-ES', {
+        const messageTime = data.fecha ? new Date(data.fecha).toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
+        }) : new Date().toLocaleTimeString('es-ES', {
             hour: '2-digit',
             minute: '2-digit'
         });
         
-        // Crear avatar con iniciales
         const avatarHtml = isOwn ? '' : `
             <div class="message-avatar">
-                ${data.usuario.initials || (data.usuario.nombre[0] + data.usuario.apellidos[0])}
+                ${data.usuario.initials || (data.usuario.nombre[0] + (data.usuario.apellidos ? data.usuario.apellidos[0] : ''))}
             </div>
         `;
         
@@ -303,7 +253,7 @@ window.chatManager = {
                 ${avatarHtml}
                 <div class="message-content-wrapper">
                     <div class="message-header">
-                        ${!isOwn ? `<strong>${this.escapeHtml(data.usuario.nombre)} ${this.escapeHtml(data.usuario.apellidos)}</strong>` : 'Tú'}
+                        ${!isOwn ? `<strong>${this.escapeHtml(data.usuario.nombre)} ${this.escapeHtml(data.usuario.apellidos || '')}</strong>` : 'Tú'}
                         <small class="message-time">${messageTime}</small>
                     </div>
                     <div class="message-content">${this.escapeHtml(data.mensaje)}</div>
@@ -314,7 +264,6 @@ window.chatManager = {
         messagesDiv.appendChild(messageDiv);
         this.scrollToBottom();
         
-        // Efecto de aparición
         setTimeout(() => {
             messageDiv.style.opacity = '1';
             messageDiv.style.transform = 'translateY(0)';
@@ -426,7 +375,6 @@ window.chatManager = {
         
         document.body.appendChild(alertDiv);
         
-        // Auto-remove después de 3 segundos
         setTimeout(() => {
             if (alertDiv.parentNode) {
                 alertDiv.parentNode.removeChild(alertDiv);
@@ -447,13 +395,11 @@ window.chatManager = {
     },
     
     cleanup: function() {
-        // Limpiar intervalos
         if (pingInterval) {
             clearInterval(pingInterval);
             pingInterval = null;
         }
         
-        // Desconectar socket
         if (socket) {
             socket.disconnect();
             socket = null;
@@ -463,11 +409,9 @@ window.chatManager = {
     }
 };
 
-// Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
     const messagesDiv = document.getElementById('chat-messages');
     if (messagesDiv) {
-        // Verificar que Socket.IO esté disponible
         const checkSocketIO = setInterval(() => {
             if (typeof io !== 'undefined') {
                 clearInterval(checkSocketIO);
@@ -481,9 +425,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 console.log('⏳ Esperando que Socket.IO se cargue...');
             }
-        }, 500); // Verificar cada 500ms
+        }, 500);
         
-        // Timeout después de 10 segundos
         setTimeout(() => {
             clearInterval(checkSocketIO);
             if (typeof io === 'undefined') {
@@ -494,20 +437,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Limpiar al salir de la página
 window.addEventListener('beforeunload', function() {
     if (window.chatManager) {
         window.chatManager.cleanup();
     }
 });
 
-// Manejar cambios de visibilidad de la página
 document.addEventListener('visibilitychange', function() {
     if (document.hidden) {
-        // Página oculta - reducir actividad
         console.log('👁️ Página oculta');
     } else {
-        // Página visible - reactivar si es necesario
         console.log('👁️ Página visible');
         if (socket && !socket.connected) {
             console.log('🔄 Reintentando conexión...');
