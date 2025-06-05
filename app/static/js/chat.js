@@ -381,16 +381,16 @@ window.chatManager = {
     },
     
     escapeHtml: function(text) {
-        if (!text) return '';
-        const map = {
-            '&': '&',
-            '<': '<',
-            '>': '>',
-            '"': '"',
-            "'": '''
-        };
-        return text.toString().replace(/[&<>"']/g, m => map[m]);
-    },
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+    return text.toString().replace(/[&<>\"']/g, m => map[m]);
+},
     
     cleanup: function() {
         if (pingInterval) {
