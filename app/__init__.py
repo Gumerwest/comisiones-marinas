@@ -38,23 +38,26 @@ def create_app(config_class=Config):
     csrf.init_app(app)
     mail.init_app(app)
     
-    # Configuración mejorada de SocketIO para Render
+    # Configuración de SocketIO usando valores de config.py
     if os.environ.get('RENDER'):
-        # Configuración específica para Render
-        socketio.init_app(app, 
-                         cors_allowed_origins="*",
-                         async_mode='threading',
-                         logger=False,
-                         engineio_logger=False,
-                         transports=['polling', 'websocket'])
+        socketio.init_app(
+            app,
+            cors_allowed_origins="*",
+            async_mode=app.config.get('SOCKETIO_ASYNC_MODE', 'threading'),
+            logger=False,
+            engineio_logger=False,
+            transports=app.config.get('SOCKETIO_TRANSPORTS', ['polling'])
+        )
         print("🔌 SocketIO configurado para Render")
     else:
-        # Configuración para desarrollo local
-        socketio.init_app(app, 
-                         cors_allowed_origins="*",
-                         async_mode='threading',
-                         logger=True,
-                         engineio_logger=True)
+        socketio.init_app(
+            app,
+            cors_allowed_origins="*",
+            async_mode=app.config.get('SOCKETIO_ASYNC_MODE', 'threading'),
+            logger=True,
+            engineio_logger=True,
+            transports=app.config.get('SOCKETIO_TRANSPORTS', ['polling', 'websocket'])
+        )
         print("🔌 SocketIO configurado para desarrollo")
     
     login.login_view = 'auth.login'

@@ -85,7 +85,8 @@ window.chatManager = {
         currentComisionId = id;
         currentTemaId = null;
         
-        socket.emit('join', { room: `comision_${id}` });
+        socket.emit('join_comision', { comision_id: id });
+        socket.emit('get_messages_comision', { comision_id: id, limit: 50, offset: 0 });
     },
     
     joinTema: function(id) {
@@ -95,7 +96,8 @@ window.chatManager = {
         currentTemaId = id;
         currentComisionId = null;
         
-        socket.emit('join', { room: `tema_${id}` });
+        socket.emit('join_tema', { tema_id: id });
+        socket.emit('get_messages_tema', { tema_id: id, limit: 50, offset: 0 });
     },
     
     setupEventListeners: function() {
@@ -117,6 +119,10 @@ window.chatManager = {
                 }
             }, 500);
         });
+
+        socket.on('connected', function(data) {
+            console.log('🔗 Conexión confirmada:', data);
+        });
         
         socket.on('disconnect', function(reason) {
             console.log('❌ Desconectado del servidor de chat:', reason);
@@ -137,18 +143,35 @@ window.chatManager = {
             console.log('🏓 Pong recibido');
         });
         
-        socket.on('server_message', (data) => {
-            console.log('📨 Mensaje del servidor:', data);
-            self.displayMessage({ usuario: { nombre: 'Sistema' }, mensaje: data.msg, fecha: new Date().toISOString() });
+        socket.on('joined_room', (data) => {
+            console.log('✅ Unido a sala:', data);
         });
-        
-        socket.on('message', (data) => {
-            console.log('💬 Nuevo mensaje:', data);
-            self.displayMessage({
-                usuario: { nombre: data.username.split('@')[0], apellidos: '', initials: data.username[0] },
-                mensaje: data.message,
-                fecha: new Date().toISOString()
-            });
+
+        socket.on('new_message_comision', (data) => {
+            console.log('💬 Nuevo mensaje comisión:', data);
+            self.displayMessage(data);
+        });
+
+        socket.on('new_message_tema', (data) => {
+            console.log('💬 Nuevo mensaje tema:', data);
+            self.displayMessage(data);
+        });
+
+        socket.on('messages_comision', (data) => {
+            console.log('📜 Historial comisión:', data);
+            self.displayMessages(data);
+        });
+
+        socket.on('messages_tema', (data) => {
+            console.log('📜 Historial tema:', data);
+            self.displayMessages(data);
+        });
+
+        socket.on('error', (data) => {
+            console.error('⚠️ Error en chat:', data);
+            if (data && data.message) {
+                self.showTempMessage(data.message, 'warning');
+            }
         });
         
         this.setupChatForm();
@@ -202,14 +225,14 @@ window.chatManager = {
         
         try {
             if (currentComisionId) {
-                socket.emit('message', {
-                    room: `comision_${currentComisionId}`,
-                    message: mensaje
+                socket.emit('send_message_comision', {
+                    comision_id: currentComisionId,
+                    mensaje: mensaje
                 });
             } else if (currentTemaId) {
-                socket.emit('message', {
-                    room: `tema_${currentTemaId}`,
-                    message: mensaje
+                socket.emit('send_message_tema', {
+                    tema_id: currentTemaId,
+                    mensaje: mensaje
                 });
             }
             
@@ -226,7 +249,7 @@ window.chatManager = {
         if (!messagesDiv || !data) return;
         
         const currentUserId = messagesDiv.dataset.currentUserId;
-        const isOwn = String(data.usuario.nombre) === String(currentUserId);
+        const isOwn = String(data.usuario.id) === String(currentUserId);
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${isOwn ? 'own-message' : 'other-message'}`;
