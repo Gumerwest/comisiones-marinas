@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
 from app.models import Usuario
@@ -25,3 +26,17 @@ class RegistroForm(FlaskForm):
         user = Usuario.query.filter_by(email=email.data).first()
         if user is not None:
             raise ValidationError('Este email ya está registrado. Por favor, utilice otro.')
+
+class EditarPerfilForm(FlaskForm):
+    nombre = StringField('Nombre', validators=[DataRequired()])
+    apellidos = StringField('Apellidos', validators=[DataRequired()])
+    telefono = StringField('Teléfono', validators=[DataRequired()])
+    razon_social = StringField('Razón Social', validators=[DataRequired()])
+    nombre_comercial = StringField('Nombre Comercial', validators=[DataRequired()])
+    cargo = StringField('Cargo', validators=[DataRequired()])
+    puerto_empresa = StringField('Puerto/Empresa', 
+                                description='Especifica el puerto o empresa donde trabajas')
+    foto_perfil = FileField('Foto de Perfil', 
+                           validators=[FileAllowed(['jpg', 'jpeg', 'png'], 
+                                     'Solo se permiten imágenes JPG, JPEG y PNG')])
+    submit = SubmitField('Actualizar Perfil')
