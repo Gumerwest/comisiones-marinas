@@ -98,8 +98,26 @@ puerto_empresa = db.Column(db.String(100))    # Puerto o empresa específica
     def ha_votado(self, tema_id):
         return self.votos.filter_by(tema_id=tema_id).first() is not None
     
+    def get_avatar_url(self):
+        """Obtener URL del avatar (foto o iniciales)"""
+        if self.foto_perfil_path:
+            return self.foto_perfil_path
+        return None
+
+    def get_initials(self):
+        """Obtener iniciales para avatar por defecto"""
+        initials = self.nombre[0].upper() if self.nombre else ''
+        if self.apellidos:
+            initials += self.apellidos[0].upper()
+        return initials
+
+    def get_empresa_display(self):
+        """Obtener nombre de empresa para mostrar (prioriza puerto_empresa)"""
+        return self.puerto_empresa or self.nombre_comercial or self.razon_social or 'Sin especificar'
+    
     def __repr__(self):
         return f'<Usuario {self.email}>'
+
 
 @login.user_loader
 def load_user(id):
