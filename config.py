@@ -76,14 +76,13 @@ class Config:
             'pool_timeout': 30,
         }
 
-        # Configuración mejorada de SocketIO para Render
+        # Configuración de SocketIO para Render
         SOCKETIO_ASYNC_MODE = 'eventlet'
         SOCKETIO_CORS_ALLOWED_ORIGINS = ["*"]
         SOCKETIO_LOGGER = False  # Desactivado para producción
         SOCKETIO_ENGINEIO_LOGGER = False  # Desactivado para producción
         SOCKETIO_PING_TIMEOUT = 60
         SOCKETIO_PING_INTERVAL = 25
-        # Transporte recomendado para Render con soporte opcional de WebSockets
         SOCKETIO_TRANSPORTS = ['websocket', 'polling']
     else:
         # Configuración para desarrollo local
@@ -94,4 +93,3 @@ class Config:
         SOCKETIO_PING_TIMEOUT = 30
         SOCKETIO_PING_INTERVAL = 15
         SOCKETIO_TRANSPORTS = ['polling', 'websocket']
-
