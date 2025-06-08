@@ -23,34 +23,35 @@ window.chatManager = {
     },
 
     initializeSocket: function() {
-        try {
-            const socketOptions = {
-                transports: ['websocket', 'polling'],  // Priorizar WebSocket
-                upgrade: true,
-                timeout: 30000,
-                forceNew: true,
-                reconnection: true,
-                reconnectionAttempts: maxReconnectAttempts,
-                reconnectionDelay: 2000,
-                reconnectionDelayMax: 10000,
-                randomizationFactor: 0.5,
-                pingTimeout: 60000,
-                pingInterval: 25000
-            };
+    try {
+        const socketOptions = {
+            transports: ['polling'],  // Solo polling, más confiable en Render
+            upgrade: false,  // No intentar actualizar a websocket
+            timeout: 30000,
+            forceNew: true,
+            reconnection: true,
+            reconnectionAttempts: maxReconnectAttempts,
+            reconnectionDelay: 2000,
+            reconnectionDelayMax: 10000,
+            randomizationFactor: 0.5,
+            pingTimeout: 60000,
+            pingInterval: 25000
+        };
 
-            const protocol = window.location.protocol;
-            const host = window.location.host;
-            const socketUrl = `${protocol}//${host}`;
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        const socketUrl = `${protocol}//${host}`;
 
-            console.log(`🔗 Conectando a: ${socketUrl}`);
+        console.log(`🔗 Conectando a: ${socketUrl}`);
+        console.log(`🔧 Configuración: polling only (más estable en Render)`);
 
-            socket = io(socketUrl, socketOptions);
-            console.log("✅ Socket inicializado con configuración para Render");
-        } catch (error) {
-            console.error("❌ Error inicializando socket:", error);
-            this.showError("No se pudo conectar al chat");
-        }
-    },
+        socket = io(socketUrl, socketOptions);
+        console.log("✅ Socket inicializado con configuración para Render");
+    } catch (error) {
+        console.error("❌ Error inicializando socket:", error);
+        this.showError("No se pudo conectar al chat");
+    }
+},
 
     startPingKeepAlive: function() {
         if (pingInterval) {
