@@ -217,9 +217,13 @@
                     {% for usuario, membresia in lideres %}
                     <div class="member-card mb-3">
                         <div class="d-flex align-items-center">
-                            <div class="member-avatar me-3">
-                                {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
-                            </div>
+                            <div class="profile-avatar-md me-3">
+    {% if usuario.foto_perfil_path %}
+        <img src="{{ usuario.foto_perfil_path }}" alt="{{ usuario.nombre }}" class="profile-image-md">
+    {% else %}
+        <div class="profile-initials-md">{{ usuario.get_initials() }}</div>
+    {% endif %}
+</div>
                             <div>
                                 <h6 class="mb-0">{{ usuario.nombre }} {{ usuario.apellidos }}</h6>
                                 <small class="text-muted">{{ usuario.cargo }}</small>
@@ -236,8 +240,13 @@
                     {% for usuario, membresia in coordinadores %}
                     <div class="member-card mb-3">
                         <div class="d-flex align-items-center">
-                            <div class="member-avatar me-3">
-                                {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
+                            <div class="profile-avatar-md me-3">
+    {% if usuario.foto_perfil_path %}
+        <img src="{{ usuario.foto_perfil_path }}" alt="{{ usuario.nombre }}" class="profile-image-md">
+    {% else %}
+        <div class="profile-initials-md">{{ usuario.get_initials() }}</div>
+    {% endif %}
+</div>
                             </div>
                             <div>
                                 <h6 class="mb-0">{{ usuario.nombre }} {{ usuario.apellidos }}</h6>
@@ -255,9 +264,13 @@
                         {% for usuario, membresia in miembros[:5] %}
                         <div class="member-card mb-3">
                             <div class="d-flex align-items-center">
-                                <div class="member-avatar me-3">
-                                    {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
-                                </div>
+                                <div class="profile-avatar-md me-3">
+    {% if usuario.foto_perfil_path %}
+        <img src="{{ usuario.foto_perfil_path }}" alt="{{ usuario.nombre }}" class="profile-image-md">
+    {% else %}
+        <div class="profile-initials-md">{{ usuario.get_initials() }}</div>
+    {% endif %}
+</div>
                                 <div>
                                     <h6 class="mb-0">{{ usuario.nombre }} {{ usuario.apellidos }}</h6>
                                     <small class="text-muted">{{ usuario.cargo }}</small>
