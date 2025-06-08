@@ -221,12 +221,16 @@
             <div class="card-body">
                 {% if tema.lider %}
                 <div class="d-flex align-items-center">
-                    <div class="member-avatar me-3" style="width: 50px; height: 50px;">
-                        {{ tema.lider.nombre[0] }}{{ tema.lider.apellidos[0] }}
+                    <div class="profile-avatar-md me-3">
+                        {% if tema.lider.foto_perfil_path %}
+                            <img src="{{ tema.lider.foto_perfil_path }}" alt="{{ tema.lider.nombre }}" class="profile-image-md">
+                        {% else %}
+                            <div class="profile-initials-md">{{ tema.lider.get_initials() }}</div>
+                        {% endif %}
                     </div>
                     <div>
                         <h6 class="mb-0">{{ tema.lider.nombre }} {{ tema.lider.apellidos }}</h6>
-                        <small class="text-muted">{{ tema.lider.cargo }}</small>
+                        <small class="text-muted">{{ tema.lider.get_empresa_display() }}</small>
                     </div>
                 </div>
                 {% else %}
