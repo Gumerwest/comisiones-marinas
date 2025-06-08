@@ -1,6 +1,7 @@
 let socket = null;
 let currentComisionId = null;
 let currentTemaId = null;
+let isInitialized = false;
 let reconnectAttempts = 0;
 let maxReconnectAttempts = 5;
 let reconnectInterval = null;
@@ -8,7 +9,14 @@ let pingInterval = null;
 
 window.chatManager = {
     init: function() {
-        console.log("🚀 Inicializando sistema de chat...");
+    if (isInitialized) {
+        console.log("⚠️ Chat ya inicializado, ignorando duplicado");
+        return;
+    }
+    
+    console.log("🚀 Inicializando sistema de chat...");
+    isInitialized = true;
+
 
         if (typeof io === 'undefined') {
             console.error("❌ Socket.IO no está disponible");
@@ -80,26 +88,48 @@ window.chatManager = {
     },
 
     joinComision: function(id) {
-        if (!socket || !id) return;
+    if (!socket || !id) return;
 
-        console.log("🏠 Uniéndose a comisión:", id);
-        currentComisionId = id;
+    // NUEVO: Limpiar conexiones previas
+    if (currentComisionId && currentComisionId !== id) {
+        console.log("🚪 Saliendo de comisión anterior:", currentComisionId);
+        socket.emit('leave_comision', { comision_id: currentComisionId });
+    }
+    if (currentTemaId) {
+        console.log("🚪 Saliendo de tema:", currentTemaId);
+        socket.emit('leave_tema', { tema_id: currentTemaId });
         currentTemaId = null;
+    }
 
-        socket.emit('join_comision', { comision_id: id });
-        socket.emit('get_messages_comision', { comision_id: id, limit: 50, offset: 0 });
-    },
+    console.log("🏠 Uniéndose a comisión:", id);
+    currentComisionId = id;
 
-    joinTema: function(id) {
-        if (!socket || !id) return;
+    socket.emit('join_comision', { comision_id: id });
+    socket.emit('get_messages_comision', { comision_id: id, limit: 50, offset: 0 });
+},
 
-        console.log("💡 Uniéndose a tema:", id);
-        currentTemaId = id;
+
+   joinTema: function(id) {
+    if (!socket || !id) return;
+
+    // NUEVO: Limpiar conexiones previas
+    if (currentTemaId && currentTemaId !== id) {
+        console.log("🚪 Saliendo de tema anterior:", currentTemaId);
+        socket.emit('leave_tema', { tema_id: currentTemaId });
+    }
+    if (currentComisionId) {
+        console.log("🚪 Saliendo de comisión:", currentComisionId);
+        socket.emit('leave_comision', { comision_id: currentComisionId });
         currentComisionId = null;
+    }
 
-        socket.emit('join_tema', { tema_id: id });
-        socket.emit('get_messages_tema', { tema_id: id, limit: 50, offset: 0 });
-    },
+    console.log("💡 Uniéndose a tema:", id);
+    currentTemaId = id;
+
+    socket.emit('join_tema', { tema_id: id });
+    socket.emit('get_messages_tema', { tema_id: id, limit: 50, offset: 0 });
+},
+
 
     setupEventListeners: function() {
         if (!socket) return;
