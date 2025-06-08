@@ -120,5 +120,39 @@ def registro():
 @bp.route('/perfil', methods=['GET', 'POST'])
 @login_required
 def perfil():
-    # Implementar edición de perfil
-    return render_template('auth/perfil.html', title='Mi Perfil')
+    form = EditarPerfilForm()
+    
+    if form.validate_on_submit():
+        # Actualizar campos básicos
+        current_user.nombre = form.nombre.data
+        current_user.apellidos = form.apellidos.data
+        current_user.telefono = form.telefono.data
+        current_user.razon_social = form.razon_social.data
+        current_user.nombre_comercial = form.nombre_comercial.data
+        current_user.cargo = form.cargo.data
+        current_user.puerto_empresa = form.puerto_empresa.data
+        
+        # Procesar foto de perfil si se subió
+        if form.foto_perfil.data:
+            foto_url = upload_profile_image(form.foto_perfil.data)
+            if foto_url:
+                current_user.foto_perfil_path = foto_url
+                flash('Foto de perfil actualizada correctamente.', 'success')
+            else:
+                flash('Error al subir la foto de perfil.', 'warning')
+        
+        db.session.commit()
+        flash('Perfil actualizado correctamente.', 'success')
+        return redirect(url_for('auth.perfil'))
+    
+    # Prellenar formulario con datos actuales
+    elif request.method == 'GET':
+        form.nombre.data = current_user.nombre
+        form.apellidos.data = current_user.apellidos
+        form.telefono.data = current_user.telefono
+        form.razon_social.data = current_user.razon_social
+        form.nombre_comercial.data = current_user.nombre_comercial
+        form.cargo.data = current_user.cargo
+        form.puerto_empresa.data = current_user.puerto_empresa
+    
+    return render_template('auth/perfil.html', title='Mi Perfil', form=form)
