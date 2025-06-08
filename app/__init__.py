@@ -31,6 +31,8 @@ def create_app(config_class=Config):
             'pool_recycle': 300,
             'pool_pre_ping': True,
             'max_overflow': 10,
+            'pool_timeout': 30,
+            'isolation_level': 'READ UNCOMMITTED'  # Añadido para evitar locks
         }
 
     db.init_app(app)
@@ -48,7 +50,8 @@ def create_app(config_class=Config):
             engineio_logger=False,
             transports=['polling'],  # Solo polling en Render
             ping_timeout=60,
-            ping_interval=25
+            ping_interval=25,
+            manage_session=False  # Importante para evitar problemas de sesión
         )
         print("🔌 SocketIO configurado para Render (modo eventlet + polling)")
     else:
@@ -61,6 +64,7 @@ def create_app(config_class=Config):
             transports=['polling', 'websocket']
         )
         print("🔌 SocketIO configurado para desarrollo")
+    
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
 
@@ -92,7 +96,10 @@ def create_app(config_class=Config):
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
-        db.session.remove()
+        try:
+            db.session.remove()
+        except Exception:
+            pass  # Ignorar errores al cerrar sesión
 
     # Mostrar estado de configuración
     print(f"🌐 Aplicación inicializada")
