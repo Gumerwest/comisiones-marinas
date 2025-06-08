@@ -294,18 +294,28 @@ window.chatManager = {
             minute: '2-digit'
         });
 
-        const avatarHtml = isOwn ? '' : `
-            <div class="message-avatar">
-                ${data.usuario.initials || (data.usuario.nombre[0] + (data.usuario.apellidos ? data.usuario.apellidos[0] : ''))}
-            </div>
-        `;
+       const avatarHtml = isOwn ? '' : `
+    <div class="message-avatar">
+        ${data.usuario.foto_perfil_path ? 
+            `<img src="${data.usuario.foto_perfil_path}" alt="${data.usuario.nombre}" class="profile-image-sm">` :
+            `<div class="profile-initials-sm">${data.usuario.initials || (data.usuario.nombre[0] + (data.usuario.apellidos ? data.usuario.apellidos[0] : ''))}</div>`
+        }
+    </div>
+`;
+
 
         messageDiv.innerHTML = `
             <div class="message-container">
                 ${avatarHtml}
                 <div class="message-content-wrapper">
                     <div class="message-header">
-                        ${!isOwn ? `<strong>${this.escapeHtml(data.usuario.nombre)} ${this.escapeHtml(data.usuario.apellidos || '')}</strong>` : 'Tú'}
+                    ${!isOwn ? `
+    <div class="message-user-info">
+        <strong>${this.escapeHtml(data.usuario.nombre)} ${this.escapeHtml(data.usuario.apellidos || '')}</strong>
+        <small class="text-muted">${this.escapeHtml(data.usuario.puerto_empresa || data.usuario.nombre_comercial || '')}</small>
+    </div>
+` : 'Tú'}
+
                         <small class="message-time">${messageTime}</small>
                     </div>
                     <div class="message-content">${this.escapeHtml(data.mensaje)}</div>
