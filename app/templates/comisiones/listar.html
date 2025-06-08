@@ -126,8 +126,12 @@
                             {% for membresia in miembros_aprobados %}
                             <div class="avatar" 
                                  data-bs-toggle="tooltip" 
-                                 title="{{ membresia.usuario.nombre }} {{ membresia.usuario.apellidos }}">
-                                {{ membresia.usuario.nombre[0] }}{{ membresia.usuario.apellidos[0] }}
+                                 title="{{ membresia.usuario.nombre }} {{ membresia.usuario.apellidos }} - {{ membresia.usuario.get_empresa_display() }}">
+                                {% if membresia.usuario.foto_perfil_path %}
+                                    <img src="{{ membresia.usuario.foto_perfil_path }}" alt="{{ membresia.usuario.nombre }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                {% else %}
+                                    {{ membresia.usuario.get_initials() }}
+                                {% endif %}
                             </div>
                             {% endfor %}
                             {% if comision.membresias.filter_by(estado='aprobado').all()|length > 5 %}

@@ -227,11 +227,15 @@
             <!-- Avatar y Estado -->
             <div class="card mb-4">
                 <div class="card-body text-center">
-                    <div class="member-avatar mx-auto mb-3" style="width: 120px; height: 120px; font-size: 3rem;">
-                        {{ usuario.nombre[0] }}{{ usuario.apellidos[0] }}
+                    <div class="profile-avatar-large mx-auto mb-3">
+                        {% if usuario.foto_perfil_path %}
+                            <img src="{{ usuario.foto_perfil_path }}" alt="{{ usuario.nombre }}" class="profile-image-large">
+                        {% else %}
+                            <div class="profile-initials-large">{{ usuario.get_initials() }}</div>
+                        {% endif %}
                     </div>
                     <h4 class="mb-1">{{ usuario.nombre }} {{ usuario.apellidos }}</h4>
-                    <p class="text-muted mb-3">{{ usuario.cargo }}</p>
+                    <p class="text-muted mb-3">{{ usuario.get_empresa_display() }}</p>
                     
                     <div class="mb-3">
                         {% if usuario.activo %}

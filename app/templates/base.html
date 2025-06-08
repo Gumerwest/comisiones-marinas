@@ -84,8 +84,12 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                     <div class="d-inline-flex align-items-center">
-                                        <div class="member-avatar me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
-                                            {{ current_user.nombre[0] }}{{ current_user.apellidos[0] }}
+                                        <div class="profile-avatar-sm me-2">
+                                            {% if current_user.foto_perfil_path %}
+                                                <img src="{{ current_user.foto_perfil_path }}" alt="{{ current_user.nombre }}" class="profile-image-sm">
+                                            {% else %}
+                                                <div class="profile-initials-sm">{{ current_user.get_initials() }}</div>
+                                            {% endif %}
                                         </div>
                                         <span class="d-none d-md-inline">{{ current_user.nombre }}</span>
                                         <span class="d-md-none">Perfil</span>
