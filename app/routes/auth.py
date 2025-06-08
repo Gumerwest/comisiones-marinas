@@ -4,9 +4,60 @@ from werkzeug.urls import url_parse
 from datetime import datetime
 from app import db
 from app.models import Usuario
-from app.forms.auth import LoginForm, RegistroForm
+from app.forms.auth import LoginForm, RegistroForm, EditarPerfilForm
+from werkzeug.utils import secure_filename
+import cloudinary
+import cloudinary.uploader
+from datetime import datetime
 
 bp = Blueprint('auth', __name__)
+
+def init_cloudinary():
+    """Inicializar Cloudinary si está configurado"""
+    try:
+        if not current_app.config.get('USE_CLOUDINARY'):
+            return False
+            
+        cloudinary.config(
+            cloud_name=current_app.config.get('CLOUDINARY_CLOUD_NAME'),
+            api_key=current_app.config.get('CLOUDINARY_API_KEY'),
+            api_secret=current_app.config.get('CLOUDINARY_API_SECRET'),
+            secure=True
+        )
+        return True
+    except Exception as e:
+        print(f"Error configurando Cloudinary: {str(e)}")
+        return False
+
+def upload_profile_image(file):
+    """Subir imagen de perfil a Cloudinary"""
+    if not file or not file.filename:
+        return None
+    
+    if current_app.config.get('USE_CLOUDINARY') and init_cloudinary():
+        try:
+            # Generar nombre único
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+            
+            # Subir a Cloudinary
+            result = cloudinary.uploader.upload(
+                file,
+                folder="perfiles",
+                public_id=f"perfil_{current_user.id}_{timestamp}",
+                transformation=[
+                    {'width': 200, 'height': 200, 'crop': 'fill', 'gravity': 'face'},
+                    {'quality': 'auto', 'fetch_format': 'auto'}
+                ],
+                overwrite=True
+            )
+            print(f"✅ Foto de perfil subida: {result['public_id']}")
+            return result['secure_url']
+        except Exception as e:
+            print(f"❌ Error subiendo foto de perfil: {str(e)}")
+            return None
+    
+    return None
+
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
