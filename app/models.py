@@ -53,6 +53,9 @@ class Usuario(UserMixin, db.Model):
     ultimo_acceso = db.Column(db.DateTime)
     activo = db.Column(db.Boolean, default=False)
     rol = db.Column(db.String(20), default='usuario')  # usuario, admin
+    # Campos de perfil
+foto_perfil_path = db.Column(db.String(200))  # URL de Cloudinary
+puerto_empresa = db.Column(db.String(100))    # Puerto o empresa específica
     
     # Relaciones - AQUÍ ESTÁ LA CORRECCIÓN PRINCIPAL
     membresias = db.relationship('MembresiaComision', back_populates='usuario', lazy='dynamic')
