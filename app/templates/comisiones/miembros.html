@@ -36,7 +36,21 @@
                 <tbody>
                     {% for usuario, membresia in solicitudes %}
                     <tr>
-                        <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
+                        <td>
+    <div class="d-flex align-items-center">
+        <div class="profile-avatar-md me-3">
+            {% if usuario.foto_perfil_path %}
+                <img src="{{ usuario.foto_perfil_path }}" alt="{{ usuario.nombre }}" class="profile-image-md">
+            {% else %}
+                <div class="profile-initials-md">{{ usuario.get_initials() }}</div>
+            {% endif %}
+        </div>
+        <div>
+            <div class="fw-bold">{{ usuario.nombre }} {{ usuario.apellidos }}</div>
+            <small class="text-muted">{{ usuario.get_empresa_display() }}</small>
+        </div>
+    </div>
+</td>
                         <td>{{ usuario.email }}</td>
                         <td>{{ usuario.razon_social }}</td>
                         <td>{{ usuario.cargo }}</td>
@@ -87,7 +101,22 @@
                 <tbody>
                     {% for usuario, membresia in lideres + coordinadores + miembros %}
                     <tr>
-                        <td>{{ usuario.nombre }} {{ usuario.apellidos }}</td>
+                        <td>
+    <div class="d-flex align-items-center">
+        <div class="profile-avatar-md me-3">
+            {% if usuario.foto_perfil_path %}
+                <img src="{{ usuario.foto_perfil_path }}" alt="{{ usuario.nombre }}" class="profile-image-md">
+            {% else %}
+                <div class="profile-initials-md">{{ usuario.get_initials() }}</div>
+            {% endif %}
+        </div>
+        <div>
+            <div class="fw-bold">{{ usuario.nombre }} {{ usuario.apellidos }}</div>
+            <small class="text-muted">{{ usuario.get_empresa_display() }}</small>
+        </div>
+    </div>
+</td>
+
                         <td>{{ usuario.email }}</td>
                         <td>{{ usuario.razon_social }}</td>
                         <td>{{ usuario.cargo }}</td>
