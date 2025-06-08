@@ -3,7 +3,7 @@ services:
     name: comisiones-marinas-prod
     runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python init_db.py && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 --worker-class eventlet"
+    startCommand: "python init_db.py && gunicorn --factory app:create_app --bind 0.0.0.0:$PORT --worker-class eventlet --timeout 120"
     envVars:
       - key: FLASK_APP
         value: run.py
