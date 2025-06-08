@@ -43,23 +43,24 @@ def create_app(config_class=Config):
         socketio.init_app(
             app,
             cors_allowed_origins="*",
-            async_mode=app.config.get('SOCKETIO_ASYNC_MODE', 'threading'),
+            async_mode='eventlet',  # Forzar eventlet en producción
             logger=False,
             engineio_logger=False,
-            transports=app.config.get('SOCKETIO_TRANSPORTS', ['polling'])
+            transports=['polling'],  # Solo polling en Render
+            ping_timeout=60,
+            ping_interval=25
         )
-        print("🔌 SocketIO configurado para Render")
+        print("🔌 SocketIO configurado para Render (modo eventlet + polling)")
     else:
         socketio.init_app(
             app,
             cors_allowed_origins="*",
-            async_mode=app.config.get('SOCKETIO_ASYNC_MODE', 'threading'),
+            async_mode='threading',
             logger=True,
             engineio_logger=True,
-            transports=app.config.get('SOCKETIO_TRANSPORTS', ['polling', 'websocket'])
+            transports=['polling', 'websocket']
         )
         print("🔌 SocketIO configurado para desarrollo")
-
     login.login_view = 'auth.login'
     login.login_message = 'Por favor, inicie sesión para acceder a esta página.'
 
