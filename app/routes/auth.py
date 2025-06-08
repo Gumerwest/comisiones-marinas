@@ -8,7 +8,7 @@ from app.forms.auth import LoginForm, RegistroForm, EditarPerfilForm
 from werkzeug.utils import secure_filename
 import cloudinary
 import cloudinary.uploader
-from datetime import datetime
+
 
 bp = Blueprint('auth', __name__)
 
