@@ -202,7 +202,10 @@ def handle_message_comision(data):
                     'id': current_user.id,
                     'nombre': current_user.nombre,
                     'apellidos': current_user.apellidos,
-                    'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
+                    'foto_perfil_path': current_user.foto_perfil_path,
+                    'puerto_empresa': current_user.puerto_empresa,
+                    'nombre_comercial': current_user.nombre_comercial,
+                    'initials': current_user.get_initials()
                 },
                 'mensaje': mensaje_texto,
                 'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
@@ -277,7 +280,10 @@ def handle_message_tema(data):
                     'id': current_user.id,
                     'nombre': current_user.nombre,
                     'apellidos': current_user.apellidos,
-                    'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
+                    'foto_perfil_path': current_user.foto_perfil_path,
+                    'puerto_empresa': current_user.puerto_empresa,
+                    'nombre_comercial': current_user.nombre_comercial,
+                    'initials': current_user.get_initials()
                 },
                 'mensaje': mensaje_texto,
                 'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
@@ -339,7 +345,10 @@ def handle_get_messages_comision(data):
                         'id': m.usuario.id,
                         'nombre': m.usuario.nombre,
                         'apellidos': m.usuario.apellidos,
-                        'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
+                        'foto_perfil_path': m.usuario.foto_perfil_path,
+                        'puerto_empresa': m.usuario.puerto_empresa,
+                        'nombre_comercial': m.usuario.nombre_comercial,
+                        'initials': m.usuario.get_initials()
                     },
                     'mensaje': m.contenido,
                     'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
@@ -410,7 +419,10 @@ def handle_get_messages_tema(data):
                         'id': m.usuario.id,
                         'nombre': m.usuario.nombre,
                         'apellidos': m.usuario.apellidos,
-                        'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
+                        'foto_perfil_path': m.usuario.foto_perfil_path,
+                        'puerto_empresa': m.usuario.puerto_empresa,
+                        'nombre_comercial': m.usuario.nombre_comercial,
+                        'initials': m.usuario.get_initials()
                     },
                     'mensaje': m.contenido,
                     'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
@@ -434,18 +446,3 @@ def handle_get_messages_tema(data):
         if not IS_RENDER:
             traceback.print_exc()
         emit('error', {'message': 'Error obteniendo mensajes'})
-
-@socketio.on('ping')
-def handle_ping():
-    """Responder a ping para mantener conexión activa"""
-    try:
-        emit('pong', {'timestamp': datetime.utcnow().isoformat()})
-    except Exception as e:
-        print(f"⚠️ Error en ping: {str(e)}")
-
-@socketio.on_error_default
-def default_error_handler(e):
-    print(f"❌ Error general de SocketIO: {str(e)}")
-    if not IS_RENDER:
-        traceback.print_exc()
-    emit('error', {'message': 'Error del servidor de chat'})
