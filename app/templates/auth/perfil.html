@@ -8,52 +8,167 @@
                 <h4 class="mb-0">Mi Perfil</h4>
             </div>
             <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Nombre:</strong> {{ current_user.nombre }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Apellidos:</strong> {{ current_user.apellidos }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Email:</strong> {{ current_user.email }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Teléfono:</strong> {{ current_user.telefono }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Razón Social:</strong> {{ current_user.razon_social }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Nombre Comercial:</strong> {{ current_user.nombre_comercial }}
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Cargo:</strong> {{ current_user.cargo }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Rol:</strong> 
+                <!-- Vista del perfil actual -->
+                <div class="row mb-4">
+                    <div class="col-md-3 text-center">
+                        <div class="profile-avatar-large mb-3">
+                            {% if current_user.foto_perfil_path %}
+                                <img src="{{ current_user.foto_perfil_path }}" 
+                                     alt="Foto de perfil" class="profile-image-large">
+                            {% else %}
+                                <div class="profile-initials-large">
+                                    {{ current_user.get_initials() }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <h5>{{ current_user.nombre }} {{ current_user.apellidos }}</h5>
+                        <p class="text-muted">{{ current_user.get_empresa_display() }}</p>
                         <span class="badge bg-{{ 'danger' if current_user.rol == 'admin' else 'primary' }}">
                             {{ 'Administrador' if current_user.rol == 'admin' else 'Usuario' }}
                         </span>
                     </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Estado:</strong> 
-                        <span class="badge bg-{{ 'success' if current_user.activo else 'warning' }}">
-                            {{ 'Activo' if current_user.activo else 'Pendiente de Aprobación' }}
-                        </span>
+                    <div class="col-md-9">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Email:</strong> {{ current_user.email }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Teléfono:</strong> {{ current_user.telefono }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Cargo:</strong> {{ current_user.cargo }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Estado:</strong> 
+                                <span class="badge bg-{{ 'success' if current_user.activo else 'warning' }}">
+                                    {{ 'Activo' if current_user.activo else 'Pendiente de Aprobación' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <strong>Miembro desde:</strong> {{ current_user.fecha_registro.strftime('%d/%m/%Y') }}
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <strong>Miembro desde:</strong> {{ current_user.fecha_registro.strftime('%d/%m/%Y') }}
-                    </div>
                 </div>
+
+                <hr>
+
+                <!-- Formulario de edición -->
+                <h5 class="mb-3">Editar Perfil</h5>
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.nombre.label(class="form-label") }}
+                            {{ form.nombre(class="form-control") }}
+                            {% if form.nombre.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.nombre.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.apellidos.label(class="form-label") }}
+                            {{ form.apellidos(class="form-control") }}
+                            {% if form.apellidos.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.apellidos.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.telefono.label(class="form-label") }}
+                            {{ form.telefono(class="form-control") }}
+                            {% if form.telefono.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.telefono.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.cargo.label(class="form-label") }}
+                            {{ form.cargo(class="form-control") }}
+                            {% if form.cargo.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.cargo.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.razon_social.label(class="form-label") }}
+                            {{ form.razon_social(class="form-control") }}
+                            {% if form.razon_social.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.razon_social.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.nombre_comercial.label(class="form-label") }}
+                            {{ form.nombre_comercial(class="form-control") }}
+                            {% if form.nombre_comercial.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.nombre_comercial.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.puerto_empresa.label(class="form-label") }}
+                            {{ form.puerto_empresa(class="form-control") }}
+                            <small class="form-text text-muted">{{ form.puerto_empresa.description }}</small>
+                            {% if form.puerto_empresa.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.puerto_empresa.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.foto_perfil.label(class="form-label") }}
+                            {{ form.foto_perfil(class="form-control") }}
+                            <small class="form-text text-muted">Tamaño recomendado: 200x200px. Formatos: JPG, PNG</small>
+                            {% if form.foto_perfil.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.foto_perfil.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
