@@ -78,12 +78,12 @@ class Config:
 
         # Configuración de SocketIO para Render
         SOCKETIO_ASYNC_MODE = 'eventlet'
-        SOCKETIO_CORS_ALLOWED_ORIGINS = ["*"]
+        SOCKETIO_CORS_ALLOWED_ORIGINS = "*"
         SOCKETIO_LOGGER = False  # Desactivado para producción
         SOCKETIO_ENGINEIO_LOGGER = False  # Desactivado para producción
         SOCKETIO_PING_TIMEOUT = 60
         SOCKETIO_PING_INTERVAL = 25
-        SOCKETIO_TRANSPORTS = ['websocket', 'polling']
+        SOCKETIO_TRANSPORTS = ['polling']  # Solo polling en Render para mayor confiabilidad
     else:
         # Configuración para desarrollo local
         SOCKETIO_ASYNC_MODE = 'threading'
