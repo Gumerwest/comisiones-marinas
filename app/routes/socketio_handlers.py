@@ -12,8 +12,9 @@ IS_RENDER = os.environ.get('RENDER')
 @socketio.on('connect')
 def handle_connect():
     try:
+        print("🔌 CONEXIÓN SOCKET.IO ENTRANTE")
         if current_user.is_authenticated:
-            print(f"✅ Usuario conectado: {current_user.email}")
+            print(f"✅ Usuario autenticado: {current_user.email}")
             emit('connected', {
                 'user_id': current_user.id,
                 'status': 'connected',
@@ -22,12 +23,13 @@ def handle_connect():
         else:
             print("❌ Usuario no autenticado intentó conectarse")
             emit('error', {'message': 'No autenticado'})
-            disconnect()
+            return False  # Rechazar conexión
     except Exception as e:
         print(f"❌ Error en connect: {str(e)}")
-        if not IS_RENDER:  # Solo imprimir traceback en desarrollo
+        if not IS_RENDER:
             traceback.print_exc()
         emit('error', {'message': 'Error de conexión'})
+        return False
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -49,18 +51,30 @@ def handle_join_comision(data):
             emit('error', {'message': 'ID de comisión requerido'})
             return
             
-        # Verificar permisos
-        if current_user.es_miembro_de(comision_id) or current_user.rol == 'admin':
-            room = f'comision_{comision_id}'
-            join_room(room)
-            print(f"🏠 Usuario {current_user.email} se unió a {room}")
-            emit('joined_room', {
-                'room': room,
-                'type': 'comision',
-                'id': comision_id
-            })
-        else:
-            emit('error', {'message': 'No es miembro de esta comisión'})
+        # Verificar permisos sin usar la sesión de SQLAlchemy
+        try:
+            # Crear nueva consulta para evitar problemas de threading
+            from app.models import MembresiaComision
+            es_miembro = MembresiaComision.query.filter_by(
+                usuario_id=current_user.id,
+                comision_id=comision_id,
+                estado='aprobado'
+            ).first() is not None
+            
+            if es_miembro or current_user.rol == 'admin':
+                room = f'comision_{comision_id}'
+                join_room(room)
+                print(f"🏠 Usuario {current_user.email} se unió a {room}")
+                emit('joined_room', {
+                    'room': room,
+                    'type': 'comision',
+                    'id': comision_id
+                })
+            else:
+                emit('error', {'message': 'No es miembro de esta comisión'})
+        except Exception as e:
+            print(f"❌ Error verificando permisos: {str(e)}")
+            emit('error', {'message': 'Error verificando permisos'})
             
     except Exception as e:
         print(f"❌ Error en join_comision: {str(e)}")
@@ -92,23 +106,34 @@ def handle_join_tema(data):
             emit('error', {'message': 'ID de tema requerido'})
             return
             
-        tema = Tema.query.get(tema_id)
-        if not tema:
-            emit('error', {'message': 'Tema no encontrado'})
-            return
+        # Verificar permisos con nueva consulta
+        try:
+            from app.models import Tema, MembresiaComision
+            tema = Tema.query.get(tema_id)
+            if not tema:
+                emit('error', {'message': 'Tema no encontrado'})
+                return
+                
+            es_miembro = MembresiaComision.query.filter_by(
+                usuario_id=current_user.id,
+                comision_id=tema.comision_id,
+                estado='aprobado'
+            ).first() is not None
             
-        # Verificar permisos
-        if current_user.es_miembro_de(tema.comision_id) or current_user.rol == 'admin':
-            room = f'tema_{tema_id}'
-            join_room(room)
-            print(f"💡 Usuario {current_user.email} se unió a {room}")
-            emit('joined_room', {
-                'room': room,
-                'type': 'tema',
-                'id': tema_id
-            })
-        else:
-            emit('error', {'message': 'No es miembro de esta comisión'})
+            if es_miembro or current_user.rol == 'admin':
+                room = f'tema_{tema_id}'
+                join_room(room)
+                print(f"💡 Usuario {current_user.email} se unió a {room}")
+                emit('joined_room', {
+                    'room': room,
+                    'type': 'tema',
+                    'id': tema_id
+                })
+            else:
+                emit('error', {'message': 'No es miembro de esta comisión'})
+        except Exception as e:
+            print(f"❌ Error verificando permisos de tema: {str(e)}")
+            emit('error', {'message': 'Error verificando permisos'})
             
     except Exception as e:
         print(f"❌ Error en join_tema: {str(e)}")
@@ -142,8 +167,15 @@ def handle_message_comision(data):
             emit('error', {'message': 'Datos incompletos'})
             return
             
-        # Verificar permisos
-        if not (current_user.es_miembro_de(comision_id) or current_user.rol == 'admin'):
+        # Verificar permisos con nueva consulta
+        from app.models import MembresiaComision
+        es_miembro = MembresiaComision.query.filter_by(
+            usuario_id=current_user.id,
+            comision_id=comision_id,
+            estado='aprobado'
+        ).first() is not None
+        
+        if not (es_miembro or current_user.rol == 'admin'):
             emit('error', {'message': 'Sin permisos'})
             return
         
@@ -152,38 +184,43 @@ def handle_message_comision(data):
             emit('error', {'message': 'Mensaje demasiado largo (máximo 1000 caracteres)'})
             return
         
-        # Guardar mensaje en la base de datos
-        mensaje = MensajeChat(
-            contenido=mensaje_texto,
-            usuario_id=current_user.id,
-            comision_id=comision_id
-        )
-        db.session.add(mensaje)
-        db.session.commit()
-        
-        # Emitir mensaje a todos en la sala
-        room = f'comision_{comision_id}'
-        message_data = {
-            'id': mensaje.id,
-            'usuario': {
-                'id': current_user.id,
-                'nombre': current_user.nombre,
-                'apellidos': current_user.apellidos,
-                'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
-            },
-            'mensaje': mensaje_texto,
-            'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
-            'timestamp': mensaje.fecha.isoformat()
-        }
-        
-        socketio.emit('new_message_comision', message_data, room=room)
-        print(f"📨 Mensaje enviado a {room}: {mensaje_texto[:50]}...")
+        # Guardar mensaje en la base de datos con manejo de sesión separado
+        try:
+            mensaje = MensajeChat(
+                contenido=mensaje_texto,
+                usuario_id=current_user.id,
+                comision_id=comision_id
+            )
+            db.session.add(mensaje)
+            db.session.commit()
+            
+            # Emitir mensaje a todos en la sala
+            room = f'comision_{comision_id}'
+            message_data = {
+                'id': mensaje.id,
+                'usuario': {
+                    'id': current_user.id,
+                    'nombre': current_user.nombre,
+                    'apellidos': current_user.apellidos,
+                    'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
+                },
+                'mensaje': mensaje_texto,
+                'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
+                'timestamp': mensaje.fecha.isoformat()
+            }
+            
+            socketio.emit('new_message_comision', message_data, room=room)
+            print(f"📨 Mensaje enviado a {room}: {mensaje_texto[:50]}...")
+            
+        except Exception as e:
+            print(f"❌ Error guardando mensaje: {str(e)}")
+            db.session.rollback()
+            emit('error', {'message': 'Error guardando mensaje'})
         
     except Exception as e:
         print(f"❌ Error en send_message_comision: {str(e)}")
         if not IS_RENDER:
             traceback.print_exc()
-        db.session.rollback()
         emit('error', {'message': 'Error enviando mensaje'})
 
 @socketio.on('send_message_tema')
@@ -200,13 +237,20 @@ def handle_message_tema(data):
             emit('error', {'message': 'Datos incompletos'})
             return
         
+        # Verificar permisos con nueva consulta
+        from app.models import Tema, MembresiaComision
         tema = Tema.query.get(tema_id)
         if not tema:
             emit('error', {'message': 'Tema no encontrado'})
             return
             
-        # Verificar permisos
-        if not (current_user.es_miembro_de(tema.comision_id) or current_user.rol == 'admin'):
+        es_miembro = MembresiaComision.query.filter_by(
+            usuario_id=current_user.id,
+            comision_id=tema.comision_id,
+            estado='aprobado'
+        ).first() is not None
+        
+        if not (es_miembro or current_user.rol == 'admin'):
             emit('error', {'message': 'Sin permisos'})
             return
         
@@ -215,38 +259,43 @@ def handle_message_tema(data):
             emit('error', {'message': 'Mensaje demasiado largo (máximo 1000 caracteres)'})
             return
         
-        # Guardar mensaje en la base de datos
-        mensaje = MensajeChat(
-            contenido=mensaje_texto,
-            usuario_id=current_user.id,
-            tema_id=tema_id
-        )
-        db.session.add(mensaje)
-        db.session.commit()
-        
-        # Emitir mensaje a todos en la sala
-        room = f'tema_{tema_id}'
-        message_data = {
-            'id': mensaje.id,
-            'usuario': {
-                'id': current_user.id,
-                'nombre': current_user.nombre,
-                'apellidos': current_user.apellidos,
-                'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
-            },
-            'mensaje': mensaje_texto,
-            'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
-            'timestamp': mensaje.fecha.isoformat()
-        }
-        
-        socketio.emit('new_message_tema', message_data, room=room)
-        print(f"💬 Mensaje enviado a {room}: {mensaje_texto[:50]}...")
+        # Guardar mensaje en la base de datos con manejo de sesión separado
+        try:
+            mensaje = MensajeChat(
+                contenido=mensaje_texto,
+                usuario_id=current_user.id,
+                tema_id=tema_id
+            )
+            db.session.add(mensaje)
+            db.session.commit()
+            
+            # Emitir mensaje a todos en la sala
+            room = f'tema_{tema_id}'
+            message_data = {
+                'id': mensaje.id,
+                'usuario': {
+                    'id': current_user.id,
+                    'nombre': current_user.nombre,
+                    'apellidos': current_user.apellidos,
+                    'initials': f"{current_user.nombre[0]}{current_user.apellidos[0]}"
+                },
+                'mensaje': mensaje_texto,
+                'fecha': mensaje.fecha.strftime('%d/%m/%Y %H:%M'),
+                'timestamp': mensaje.fecha.isoformat()
+            }
+            
+            socketio.emit('new_message_tema', message_data, room=room)
+            print(f"💬 Mensaje enviado a {room}: {mensaje_texto[:50]}...")
+            
+        except Exception as e:
+            print(f"❌ Error guardando mensaje: {str(e)}")
+            db.session.rollback()
+            emit('error', {'message': 'Error guardando mensaje'})
         
     except Exception as e:
         print(f"❌ Error en send_message_tema: {str(e)}")
         if not IS_RENDER:
             traceback.print_exc()
-        db.session.rollback()
         emit('error', {'message': 'Error enviando mensaje'})
 
 @socketio.on('get_messages_comision')
@@ -264,36 +313,50 @@ def handle_get_messages_comision(data):
             emit('error', {'message': 'ID de comisión requerido'})
             return
             
-        # Verificar permisos
-        if not (current_user.es_miembro_de(comision_id) or current_user.rol == 'admin'):
+        # Verificar permisos con nueva consulta
+        from app.models import MembresiaComision
+        es_miembro = MembresiaComision.query.filter_by(
+            usuario_id=current_user.id,
+            comision_id=comision_id,
+            estado='aprobado'
+        ).first() is not None
+        
+        if not (es_miembro or current_user.rol == 'admin'):
             emit('error', {'message': 'Sin permisos'})
             return
         
-        # Obtener mensajes
-        mensajes = MensajeChat.query.filter_by(comision_id=comision_id)\
-            .order_by(MensajeChat.fecha.desc())\
-            .limit(limit).offset(offset).all()
-        
-        mensajes_data = [{
-            'id': m.id,
-            'usuario': {
-                'id': m.usuario.id,
-                'nombre': m.usuario.nombre,
-                'apellidos': m.usuario.apellidos,
-                'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
-            },
-            'mensaje': m.contenido,
-            'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
-            'timestamp': m.fecha.isoformat()
-        } for m in reversed(mensajes)]
-        
-        emit('messages_comision', {
-            'comision_id': comision_id,
-            'mensajes': mensajes_data,
-            'total': len(mensajes_data)
-        })
-        
-        print(f"📥 Enviados {len(mensajes_data)} mensajes de comisión {comision_id}")
+        # Obtener mensajes con nueva consulta
+        try:
+            mensajes = MensajeChat.query.filter_by(comision_id=comision_id)\
+                .order_by(MensajeChat.fecha.desc())\
+                .limit(limit).offset(offset).all()
+            
+            mensajes_data = []
+            for m in reversed(mensajes):
+                mensajes_data.append({
+                    'id': m.id,
+                    'usuario': {
+                        'id': m.usuario.id,
+                        'nombre': m.usuario.nombre,
+                        'apellidos': m.usuario.apellidos,
+                        'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
+                    },
+                    'mensaje': m.contenido,
+                    'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
+                    'timestamp': m.fecha.isoformat()
+                })
+            
+            emit('messages_comision', {
+                'comision_id': comision_id,
+                'mensajes': mensajes_data,
+                'total': len(mensajes_data)
+            })
+            
+            print(f"📥 Enviados {len(mensajes_data)} mensajes de comisión {comision_id}")
+            
+        except Exception as e:
+            print(f"❌ Error obteniendo mensajes: {str(e)}")
+            emit('error', {'message': 'Error obteniendo mensajes'})
         
     except Exception as e:
         print(f"❌ Error en get_messages_comision: {str(e)}")
@@ -316,41 +379,55 @@ def handle_get_messages_tema(data):
             emit('error', {'message': 'ID de tema requerido'})
             return
         
+        # Verificar permisos con nueva consulta
+        from app.models import Tema, MembresiaComision
         tema = Tema.query.get(tema_id)
         if not tema:
             emit('error', {'message': 'Tema no encontrado'})
             return
             
-        # Verificar permisos
-        if not (current_user.es_miembro_de(tema.comision_id) or current_user.rol == 'admin'):
+        es_miembro = MembresiaComision.query.filter_by(
+            usuario_id=current_user.id,
+            comision_id=tema.comision_id,
+            estado='aprobado'
+        ).first() is not None
+        
+        if not (es_miembro or current_user.rol == 'admin'):
             emit('error', {'message': 'Sin permisos'})
             return
         
-        # Obtener mensajes
-        mensajes = MensajeChat.query.filter_by(tema_id=tema_id)\
-            .order_by(MensajeChat.fecha.desc())\
-            .limit(limit).offset(offset).all()
-        
-        mensajes_data = [{
-            'id': m.id,
-            'usuario': {
-                'id': m.usuario.id,
-                'nombre': m.usuario.nombre,
-                'apellidos': m.usuario.apellidos,
-                'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
-            },
-            'mensaje': m.contenido,
-            'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
-            'timestamp': m.fecha.isoformat()
-        } for m in reversed(mensajes)]
-        
-        emit('messages_tema', {
-            'tema_id': tema_id,
-            'mensajes': mensajes_data,
-            'total': len(mensajes_data)
-        })
-        
-        print(f"📥 Enviados {len(mensajes_data)} mensajes de tema {tema_id}")
+        # Obtener mensajes con nueva consulta
+        try:
+            mensajes = MensajeChat.query.filter_by(tema_id=tema_id)\
+                .order_by(MensajeChat.fecha.desc())\
+                .limit(limit).offset(offset).all()
+            
+            mensajes_data = []
+            for m in reversed(mensajes):
+                mensajes_data.append({
+                    'id': m.id,
+                    'usuario': {
+                        'id': m.usuario.id,
+                        'nombre': m.usuario.nombre,
+                        'apellidos': m.usuario.apellidos,
+                        'initials': f"{m.usuario.nombre[0]}{m.usuario.apellidos[0]}"
+                    },
+                    'mensaje': m.contenido,
+                    'fecha': m.fecha.strftime('%d/%m/%Y %H:%M'),
+                    'timestamp': m.fecha.isoformat()
+                })
+            
+            emit('messages_tema', {
+                'tema_id': tema_id,
+                'mensajes': mensajes_data,
+                'total': len(mensajes_data)
+            })
+            
+            print(f"📥 Enviados {len(mensajes_data)} mensajes de tema {tema_id}")
+            
+        except Exception as e:
+            print(f"❌ Error obteniendo mensajes: {str(e)}")
+            emit('error', {'message': 'Error obteniendo mensajes'})
         
     except Exception as e:
         print(f"❌ Error en get_messages_tema: {str(e)}")
