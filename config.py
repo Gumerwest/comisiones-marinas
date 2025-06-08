@@ -10,14 +10,6 @@ class Config:
         'sqlite:///' + os.path.join(basedir, 'app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # CONFIGURACIÓN CRÍTICA PARA SQLALCHEMY
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 10,
-        'pool_recycle': 3600,
-        'pool_pre_ping': True,
-        'max_overflow': 20,
-    }
-
     # CLOUDINARY - Para almacenar archivos e imágenes
     CLOUDINARY_ENABLED = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
@@ -67,13 +59,19 @@ class Config:
         # Configuración adicional para producción
         PROPAGATE_EXCEPTIONS = True
 
-        # Para Render, usar una configuración más robusta de SQLAlchemy
+        # CONFIGURACIÓN CRÍTICA PARA SQLALCHEMY EN RENDER
         SQLALCHEMY_ENGINE_OPTIONS = {
-            'pool_size': 5,
-            'pool_recycle': 300,
-            'pool_pre_ping': True,
-            'max_overflow': 10,
-            'pool_timeout': 30,
+            'pool_size': 5,                    # Reducido de 10
+            'pool_recycle': 300,               # Reciclar conexiones cada 5 minutos
+            'pool_pre_ping': True,             # Verificar conexiones antes de usar
+            'max_overflow': 10,                # Reducido de 20
+            'pool_timeout': 30,                # Timeout de conexión
+            'isolation_level': 'READ UNCOMMITTED',  # Evitar locks
+            'connect_args': {
+                'connect_timeout': 10,
+                'application_name': 'comisiones-marinas',
+                'options': '-c lock_timeout=10000'  # 10 segundos de timeout para locks
+            }
         }
 
         # Configuración de SocketIO para Render
@@ -84,8 +82,16 @@ class Config:
         SOCKETIO_PING_TIMEOUT = 60
         SOCKETIO_PING_INTERVAL = 25
         SOCKETIO_TRANSPORTS = ['polling']  # Solo polling en Render para mayor confiabilidad
+        SOCKETIO_MANAGE_SESSION = False  # Importante para evitar problemas de sesión
     else:
         # Configuración para desarrollo local
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'pool_size': 10,
+            'pool_recycle': 3600,
+            'pool_pre_ping': True,
+            'max_overflow': 20,
+        }
+        
         SOCKETIO_ASYNC_MODE = 'threading'
         SOCKETIO_CORS_ALLOWED_ORIGINS = ["*"]
         SOCKETIO_LOGGER = True
@@ -93,3 +99,4 @@ class Config:
         SOCKETIO_PING_TIMEOUT = 30
         SOCKETIO_PING_INTERVAL = 15
         SOCKETIO_TRANSPORTS = ['polling', 'websocket']
+        SOCKETIO_MANAGE_SESSION = True
